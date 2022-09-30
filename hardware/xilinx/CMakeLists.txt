@@ -16,6 +16,19 @@ execute_process(COMMAND python ${VTA_CONFIG} --cfg-str
         OUTPUT_VARIABLE CONF)
 string(STRIP ${CONF} CONF)
 message(STATUS "got conf ${CONF}")
+set(HLS_CFLAGS "")
+execute_process(COMMAND python ${VTA_CONFIG} --cflags
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        OUTPUT_VARIABLE HLS_CFLAGS
+        )
+string(STRIP ${HLS_CFLAGS} HLS_CFLAGS)
+message(STATUS "got hls cflags ${HLS_CFLAGS}")
+
+set(CMAKE_CXX_FLAGS
+        ${CMAKE_CXX_FLAGS}
+        ${HLS_CFLAGS}
+        )
+
 SET(IP_BUILD_PATH "${BUILD_DIR}/hls/${CONF}")
 SET(HW_BUILD_PATH "${BUILD_DIR}/vivado/${CONF}")
 
@@ -52,12 +65,20 @@ add_custom_command(
         OUTPUT ${IP_PATH}
         COMMAND ${VIVADO_HLS}
         ARGS
-#        -f "${SCRIPT_DIR}/hls.tcl"
-#        -tclargs "${VTA_HW_DIR}" "${CONFIG_TCL}"
+        -f "${SCRIPT_DIR}/hls.tcl"
+        -tclargs "${VTA_HW_DIR}" "${CONFIG_TCL}"
         WORKING_DIRECTORY ${IP_BUILD_PATH}
         DEPENDS ${tcl}
 )
 add_custom_target(ip
         DEPENDS ${IP_PATH})
 
-
+include_directories(
+        "/tools/Xilinx/Vivado/2018.3/include_no_rtti"
+)
+add_executable(vta_sim_test
+        src/vta.cc
+        src/vta.h
+        sim/vta_test.cc
+        ../../tests/hardware/common/test_lib.cc
+        )

@@ -991,6 +991,9 @@ int blocked_gemm_test(int batch, int channels, int block, bool uop_compression,
   for (int i = 0; i < batch; i += block) {
     // Iterate over output channel blocks
     for (int j = 0; j < out_feat; j += block) {
+        int vta_batch = VTA_BATCH;
+        int y_size = block/VTA_BATCH;
+        int x_size = block/VTA_BLOCK_OUT;
       // Load bias block (pop next if not first, push prev)
       insn_buf[insn_idx++] = get2DLoadStoreInsn(
           VTA_OPCODE_LOAD,                                    // opcode
