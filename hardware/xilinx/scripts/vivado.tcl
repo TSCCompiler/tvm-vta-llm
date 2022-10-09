@@ -293,8 +293,7 @@ if { $device_family eq "zynq-7000" } {
     CONFIG.PCW_EN_CLK0_PORT {1} \
     CONFIG.PCW_FPGA0_PERIPHERAL_FREQMHZ {100} \
     CONFIG.PCW_USE_DEFAULT_ACP_USER_VAL {1} \
-    CONFIG.PCW_USE_S_AXI_ACP {1} \
-    CONFIG.preset {ZC702} \
+    CONFIG.PCW_USE_S_AXI_ACP {1}
   ] $processing_system
   # Get ports that are specific to the Zynq 7000 processing system
   set ps_clk    [get_bd_pins processing_system/FCLK_CLK0]
@@ -322,7 +321,8 @@ if { $device_family eq "zynq-7000" } {
   set maxi      [get_bd_intf_pins processing_system/M_AXI_HPM0_FPD]
   set saxi      [get_bd_intf_pins processing_system/S_AXI_HPC0_FPD]
 }
-
+save_bd_design
+exit
 # Create interface connections
 connect_bd_intf_net -intf_net axi_xbar_M00_AXI [get_bd_intf_pins axi_xbar/M00_AXI] [get_bd_intf_pins fetch_0/s_axi_CONTROL_BUS]
 connect_bd_intf_net -intf_net axi_xbar_M01_AXI [get_bd_intf_pins axi_xbar/M01_AXI] [get_bd_intf_pins load_0/s_axi_CONTROL_BUS]

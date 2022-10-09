@@ -45,20 +45,41 @@ add_custom_command(OUTPUT ${BUILD_DIR}/include
         ARGS include
         WORKING_DIRECTORY ${BUILD_DIR}
         )
+add_custom_command(OUTPUT ${IP_BUILD_PATH}
+        COMMAND mkdir
+        ARGS -p ${IP_BUILD_PATH}
+        )
+
 add_custom_target(inc_dir
         DEPENDS ${BUILD_DIR}/include
        )
+add_custom_target(ip_build_dir
+        DEPENDS ${IP_BUILD_PATH}
+        )
+
+add_custom_command(OUTPUT ${HW_BUILD_PATH}
+        COMMAND mkdir
+        ARGS -p ${HW_BUILD_PATH}
+        )
+add_custom_target(hw_build_dir
+        DEPENDS ${HW_BUILD_PATH}
+        )
 
 add_custom_command(
         OUTPUT "${CONFIG_TCL}"
         COMMAND python
         ARGS "${VTA_CONFIG}" --export-tcl "${CONFIG_TCL}"
         WORKING_DIRECTORY ${BUILD_DIR}
-        DEPENDS  ${inc_dir}
+        DEPENDS
+        ${inc_dir}
+        ${hw_build_dir}
+        ${ip_build_dir}
         )
 
 add_custom_target(tcl
-        DEPENDS ${CONFIG_TCL}
+        DEPENDS
+        ${CONFIG_TCL}
+
        )
 
 add_custom_command(
@@ -73,6 +94,19 @@ add_custom_command(
 add_custom_target(ip
         DEPENDS ${IP_PATH})
 
+add_custom_command(
+        OUTPUT ${BIT_PATH}
+        COMMAND ${VIVADO}
+        ARGS
+        -mode tcl
+        -source ${SCRIPT_DIR}/vivado.tcl
+        -tclargs "${BUILD_DIR}/hls/${CONF}" "${CONFIG_TCL}"
+        WORKING_DIRECTORY ${HW_BUILD_PATH}
+        DEPENDS ${hw_build_dir}
+)
+add_custom_target(bit
+        DEPENDS ${BIT_PATH}
+)
 include_directories(
         "/tools/Xilinx/Vivado/2018.3/include_no_rtti"
 )

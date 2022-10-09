@@ -202,7 +202,7 @@ def main():
         print(pkg.TARGET)
 
     if args.defs:
-        print(" ".join(pkg.macro_defs))
+        print("  ".join(pkg.macro_defs))
 
     if args.sources:
         print(" ".join(pkg.lib_source))
