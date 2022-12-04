@@ -39,8 +39,7 @@ source $vta_config
 set cflags $CFLAGS
 
 # Get the VTA configuration paramters
-# set ::device $FPGA_DEVICE
-set ::device "xc7z100ffg900-2"
+set ::device $FPGA_DEVICE
 set ::period $FPGA_PERIOD
 
 # Get the VTA SRAM reshape/partition factors to get all memories
@@ -105,8 +104,7 @@ add_files $src_dir/vta.cc -cflags $cflags
 open_solution "soln"
 init_design
 csynth_design
-export_design  -rtl verilog -format ip_catalog -vendor "xilinx_com" -library "hls" -version "1.0.0" -display_name "vta_fetch"
-
+export_design -format ip_catalog
 close_project
 
 # Generate load stage
@@ -116,8 +114,7 @@ add_files $src_dir/vta.cc -cflags $cflags
 open_solution "soln"
 init_design
 csynth_design
-export_design  -rtl verilog -format ip_catalog -vendor "xilinx_com" -library "hls" -version "1.0.0" -display_name "vta_load"
-
+export_design -format ip_catalog
 close_project
 
 # Generate compute stage
@@ -127,8 +124,7 @@ add_files $src_dir/vta.cc -cflags $cflags
 open_solution "soln"
 init_design
 csynth_design
-export_design -rtl verilog -format ip_catalog -vendor "xilinx_com" -library "hls" -version "1.0.0" -display_name "vta_compute"
-
+export_design -format ip_catalog
 close_project
 
 # Generate store stage
@@ -138,7 +134,7 @@ add_files $src_dir/vta.cc -cflags $cflags
 open_solution "soln"
 init_design
 csynth_design
-export_design -rtl verilog -format ip_catalog -vendor "xilinx_com" -library "hls" -version "1.0.0" -display_name "vta_store"
+export_design -format ip_catalog
 close_project
 
 exit

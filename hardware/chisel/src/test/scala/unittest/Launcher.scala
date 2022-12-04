@@ -47,9 +47,9 @@ object Launcher {
         (c) => new TestMatrixVectorMultiplication(c)
       }
     },
-		"alu" -> { (manager: TesterOptionsManager) =>
+    "alu" -> { (manager: TesterOptionsManager) =>
       Driver.execute(() => new AluVector, manager) {
-        (c) => new TestAluVector(c)
+        (c) => new AluVectorTester(c)
       }
     }
   )

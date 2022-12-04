@@ -99,7 +99,7 @@ void read_tensor(
   WIDE_T src[][NARROW_W * Y_DIM * X_DIM / WIDE_W],
   NARROW_T dst[Y_DIM][X_DIM]) {
 #pragma HLS INLINE
-    int src_bitwidth = NARROW_W * Y_DIM * X_DIM / WIDE_W;
+
   // Read in weight tensor
   for (int p = 0; p < NARROW_W * Y_DIM * X_DIM / WIDE_W; p++) {
     WIDE_T packet = src[idx][p];
@@ -242,15 +242,6 @@ void gemm(
   bus_T out_mem[VTA_ACC_BUFF_DEPTH][OUT_MAT_AXI_RATIO]) {
 #pragma HLS INLINE
 
-    int vta_uop_buffer_depth = VTA_UOP_BUFF_DEPTH;
-    int vta_acc_buffer_depth = VTA_ACC_BUFF_DEPTH;
-    int vat_inp_buff_depth = VTA_INP_BUFF_DEPTH;
-    int vta_wgt_buff_depth = VTA_WGT_BUFF_DEPTH;
-    int vta_acc_buff_depth = VTA_ACC_BUFF_DEPTH;
-    int acc_mat_axi_ratio = ACC_MAT_AXI_RATIO;
-    int inp_axi = INP_MAT_AXI_RATIO;
-    int wgt_axi = WGT_MAT_AXI_RATIO;
-    int out_mat_axi = OUT_MAT_AXI_RATIO;
   VTAGemInsn insn = *((VTAGemInsn *) &insn_raw);
 
   // Loop offset
@@ -294,9 +285,6 @@ void gemm(
         out_T o_tensor[VTA_BATCH][VTA_BLOCK_OUT];
 
         // Inner GEMM loop
-//        int vta_batch = VTA_BATCH;
-//        int vta_block_out = VTA_BLOCK_OUT;
-//        int vta_block_in = VTA_BLOCK_IN;
         for (int b = 0; b < VTA_BATCH; b++) {
           for (int oc = 0; oc < VTA_BLOCK_OUT; oc++) {
             // Initialize the accumulator values
