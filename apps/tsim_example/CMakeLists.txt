@@ -18,6 +18,7 @@
 cmake_minimum_required(VERSION 3.2)
 project(tsim C CXX)
 
+
 if(NOT DEFINED ENV{TVM_PATH})
     message(ERROR "Make sure to set TVM_PATH in your environment")
 endif()
@@ -30,9 +31,11 @@ include_directories("$ENV{TVM_PATH}/include")
 include_directories("$ENV{TVM_PATH}/3rdparty/dlpack/include")
 include_directories("$ENV{TVM_PATH}/3rdparty/dmlc-core/include")
 include_directories("$ENV{VTA_HW_PATH}/src/dpi")
+include_directories("/usr/local/share/verilator/include/")
+include_directories("/usr/local/share/verilator/include/vltstd/")
 
-set(CMAKE_C_FLAGS "-O2 -Wall -fPIC -fvisibility=hidden")
-set(CMAKE_CXX_FLAGS "-O2 -Wall -fPIC -fvisibility=hidden -std=c++11")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -Wall -fPIC -fvisibility=hidden")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -Wall -fPIC -fvisibility=hidden -std=c++17")
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU" AND
     CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 7.0)

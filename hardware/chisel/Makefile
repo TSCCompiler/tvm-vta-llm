@@ -52,7 +52,8 @@ USE_TRACE_DETAILED = 0
 USE_THREADS = 0
 VTA_LIBNAME = libvta_hw
 UNITTEST_NAME = all
-CXX = g++
+#CXX = g++
+CXX = clang++-8
 # A debug build with DEBUG = 1 is useful to trace the simulation with a
 # debugger.
 DEBUG = 0
@@ -65,6 +66,8 @@ CXX_HAS_ALIGN_NEW := $(shell [ $(CXX_MAJOR) -ge 7 ] && echo true)
 
 CONFIG_TEST = $(TOP_TEST)$(CONFIG)
 
+#/usr/lib/jvm/java-1.8.0-openjdk-amd64/bin/java -Djline.terminal=jline.UnsupportedTerminal -Dsbt.log.noformat=true -Dfile.encoding=UTF-8 -Didea.managed=true -Dfile.encoding=UTF-8 -Didea.installation.dir=/home/sunhh/workspace/idea-IC-221.5591.52 -jar /home/sunhh/.cache/sbt/boot/sbt-launch/1.5.8/sbt-launch-1.5.8.jar
+TVM_PATH := /home/share/data/workspace/project/nn_compiler/tvm
 
 ifndef TVM_PATH
    TVM_PATH := $(abspath ../../../../)
@@ -89,12 +92,12 @@ verilator_opt += -Mdir ${verilator_build_dir}
 verilator_opt += -I$(chisel_build_dir)
 
 ifeq ($(DEBUG), 0)
-	cxx_flags = -O2 -Wall -fvisibility=hidden
+	cxx_flags = -nostdlib++ -isystem /usr/lib/llvm-8/include/c++/v1 -lc++ -fPIC -lpthread -Wunused-command-line-argument -O2 -Wall -fvisibility=hidden
 else
-	cxx_flags = -O0 -g -Wall
+	cxx_flags = -nostdlib++ -isystem /usr/lib/llvm-8/include/c++/v1 -lc++ -fPIC -lpthread -Wunused-command-line-argument -O0 -g -Wall
 endif
 
-cxx_flags += -std=c++11 -Wno-maybe-uninitialized
+cxx_flags += -std=c++17 -Wno-maybe-uninitialized
 ifeq ($(CXX_HAS_ALIGN_NEW),true)
 	cxx_flags += -faligned-new
 endif

@@ -20,16 +20,21 @@
 package test
 
 import chisel3._
-import chisel3.experimental.MultiIOModule
+//import chisel3.experimental.MultiIOModule
 import vta.dpi._
 import accel._
+import vta.util.config._
+import vta.core._
+import vta.shell._
+
+class TestConfig extends Config(new CoreConfig ++ new PynqConfig)
 
 /** VTA simulation shell.
   *
   * Instantiate Host and Memory DPI modules.
   *
   */
-class VTASimShell extends MultiIOModule {
+class VTASimShell(implicit val p: Parameters) extends MultiIOModule {
   val host = IO(new VTAHostDPIMaster)
   val mem = IO(new VTAMemDPIClient)
   val sim_clock = IO(Input(Clock()))
@@ -53,7 +58,7 @@ class VTASimShell extends MultiIOModule {
   * Instantiate and connect the simulation-shell and the accelerator.
   *
   */
-class TestAccel extends MultiIOModule {
+class TestAccel(implicit p: Parameters) extends MultiIOModule {
   val sim_clock = IO(Input(Clock()))
   val sim_wait = IO(Output(Bool()))
   val sim_shell = Module(new VTASimShell)
@@ -66,5 +71,6 @@ class TestAccel extends MultiIOModule {
 
 /** Generate TestAccel as top module */
 object Elaborate extends App {
+    implicit val p: Parameters = new TestConfig
   chisel3.Driver.execute(args, () => new TestAccel)
 }

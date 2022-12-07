@@ -21,9 +21,11 @@ import ctypes
 import os.path as osp
 from sys import platform
 
+
 def get_ext():
     """Return shared library extension"""
     return ".dylib" if platform == "darwin" else ".so"
+
 
 def load_dll(dll):
     """Load shared library
@@ -42,12 +44,14 @@ def load_dll(dll):
     except OSError:
         return []
 
+
 def load_sw():
     """Load all software shared libraries"""
     cur_path = osp.dirname(osp.abspath(osp.expanduser(__file__)))
     sw_libname = "libsw" + get_ext()
     sw_lib = osp.join(cur_path, "..", "build", sw_libname)
     load_dll(sw_lib)
+
 
 def init(hw_backend):
     """Init hardware and software shared library for accelerator
@@ -66,6 +70,7 @@ def init(hw_backend):
     m = tvm.runtime.load_module(hw_lib, "vta-tsim")
     f = tvm.get_global_func("tvm.vta.tsim.init")
     f(m)
+
 
 def load_module():
     """Return driver function"""

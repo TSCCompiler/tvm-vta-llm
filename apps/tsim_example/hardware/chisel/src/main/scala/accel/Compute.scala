@@ -22,6 +22,7 @@ package accel
 import chisel3._
 import chisel3.util._
 import vta.dpi._
+import vta.util.config._
 
 /** Compute
  *
@@ -35,7 +36,7 @@ import vta.dpi._
  * 6. Check if counter (cnt) is equal to length to assert finish,
  *    otherwise go to step 2.
  */
-class Compute(implicit config: AccelConfig) extends Module {
+class Compute(implicit config: AccelConfig, p: Parameters) extends Module {
   val io = IO(new Bundle {
     val launch = Input(Bool())
     val finish = Output(Bool())
@@ -101,15 +102,22 @@ class Compute(implicit config: AccelConfig) extends Module {
     waddr := waddr + 8.U
   }
 
-  // create request
-  io.mem.req.valid := state === sReadReq | state === sWriteReq
-  io.mem.req.opcode := state === sWriteReq
-  io.mem.req.len := 0.U // one-word-per-request
-  io.mem.req.addr := Mux(state === sReadReq, raddr, waddr)
+  // //create request
+  //io.mem.req.valid := state === sReadReq | state === sWriteReq
+  //io.mem.req.opcode := state === sWriteReq
+  //io.mem.req.len := 0.U // one-word-per-request
+  //io.mem.req.addr := Mux(state === sReadReq, raddr, waddr)
+
+  io.mem.req.ar_valid := state === sReadReq
+  io.mem.req.aw_valid := state === sWriteReq
+  io.mem.req.ar_len := 0.U
+  io.mem.req.aw_len := 0.U
+  io.mem.req.ar_addr := raddr
+  io.mem.req.aw_addr := waddr
 
   // read
   when(state === sReadData && io.mem.rd.valid) {
-    reg := io.mem.rd.bits + const
+    reg := io.mem.rd.bits // + io.vals(0) // + "1" //const
   }
   io.mem.rd.ready := state === sReadData
 

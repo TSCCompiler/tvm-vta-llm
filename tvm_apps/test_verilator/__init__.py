@@ -15,32 +15,4 @@
 # specific language governing permissions and limitations
 # under the License.
 
-export PYTHONPATH:=$(PWD)/python:$(PYTHONPATH)
-
-BUILD_NAME = build
-build_dir = $(abspath .)/$(BUILD_NAME)
-
-default: run_verilog
-
-run_verilog: verilog driver
-	python3 tests/python/verilog_accel.py
-
-run_chisel: chisel driver
-	python3 tests/python/chisel_accel.py
-
-driver: | $(build_dir)
-	cd $(build_dir) && cmake -DCMAKE_TOOLCHAIN_FILE=/home/share/data/workspace/project/cmake/toolchains/clang8.cmake .. && make
-
-$(build_dir):
-	mkdir -p $@
-
-verilog:
-	make -C hardware/verilog
-
-chisel:
-	make -C hardware/chisel
-
-clean:
-	-rm -rf $(build_dir)
-	make -C hardware/chisel clean
-	make -C hardware/verilog clean
+""" Infrastructure and tests for Verilator codegen """

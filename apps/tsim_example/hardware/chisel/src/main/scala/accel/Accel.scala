@@ -21,6 +21,7 @@ package accel
 
 import chisel3._
 import vta.dpi._
+import vta.util.config._
 
 /** Add-by-one accelerator.
  *
@@ -44,7 +45,7 @@ case class AccelConfig() {
   val ptrBits = 2 * regBits
 }
 
-class Accel extends Module {
+class Accel(implicit p: Parameters) extends Module {
   val io = IO(new Bundle {
     val host = new VTAHostDPIClient
     val mem = new VTAMemDPIMaster

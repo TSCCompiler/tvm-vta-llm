@@ -17,12 +17,17 @@
  * under the License.
  */
 
-module add #(parameter LANES = 1)(input clock, input reset);
+module add #(parameter LANES = 1)(input clock, input reset,
+ input wire [32*LANES-1:0] ra,
+ input wire [32*LANES-1:0] rb,
+ output wire [32-1:0] ry);
 
     reg [32-1:0] cc;
-    reg [32*LANES-1:0] ra;
-    reg [32*LANES-1:0] rb;
-    reg [32*LANES-1:0] ry;
+//    reg [32*LANES-1:0] ra;
+    //;
+    reg [32*LANES-1:0] sry;
+
+    assign ry = sry;
 
     always @(posedge clock) begin
         if (reset) begin
@@ -33,17 +38,28 @@ module add #(parameter LANES = 1)(input clock, input reset);
         end
     end
 
+//    always @(posedge clock) begin
+//            if (reset) begin
+//                ra[32*0+:32] <= 0;
+//                rb[32*0+:32] <= 0;
+//                ry[32*0+:32] <= 0;
+//            end
+//            else begin
+//                ry[32*0+:32] <= ra[32*0+:32] + rb[32*0+:32];
+//            end
+//        end
+
     genvar i;
-    for (i = 0; i < LANES; i++) begin
+    for (i = 0; i < LANES; i=i+1) begin
 
         always @(posedge clock) begin
             if (reset) begin
-                ra[32*i+:32] <= 0;
-                rb[32*i+:32] <= 0;
-                ry[32*i+:32] <= 0;
+//                ra[32*i+:32] = 0;
+//                rb[32*i+:32] = 0;
+                sry[32*i+:32] <= 0;
             end
             else begin
-                ry[32*i+:32] <= ra[32*i+:32] + rb[32*i+:32];
+                sry[32*i+:32] <= ra[32*i+:32] + rb[32*i+:32];
             end
         end
 
