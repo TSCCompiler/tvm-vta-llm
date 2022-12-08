@@ -37,7 +37,7 @@ module driver (
 //    always_comb begin
     always@(opcode or id or in or addr)  begin
         case(opcode)
-            32'd0 : begin  out <= 32'hdeadbeef;
+            32'd0 : begin  out = 32'hdeadbeef;
             end
             32'd1 : begin
                 case(id)

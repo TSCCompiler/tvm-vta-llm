@@ -186,7 +186,7 @@ def tbias(lanes):
 def test_add():
     """add tests."""
     tadd(1)
-    tadd(2)
+    # tadd(2)
 
 
 def test_bias_add():
@@ -198,4 +198,4 @@ def test_bias_add():
 if __name__ == "__main__":
     # tvm.testing.main()
     test_add()
-    test_bias_add()
+    # test_bias_add()

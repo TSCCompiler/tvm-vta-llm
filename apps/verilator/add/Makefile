@@ -42,6 +42,7 @@ $(LIB_PATH): $(OUT_DIR)/$(TOP_NAME).cpp
 	-I$(VERILATOR_INC_DIR) \
 	-I$(OUT_DIR) \
 	$(VERILATOR_INC_DIR)/verilated.cpp \
+	$(VERILATOR_INC_DIR)/verilated_vcd_c.cpp \
 	$(SRC_DIR)/*.cc \
 	$(OUT_DIR)/*.cpp \
 	-o $@
@@ -55,6 +56,7 @@ $(OUT_DIR)/$(TOP_NAME).cpp: $(VERILOG_DIR)/*.v
 	-Wno-UNOPTFLAT \
 	-DLANES=$(LANES) \
 	--cc \
+	--trace \
 	--prefix $(TOP_NAME) \
 	--top-module "driver" \
 	--Mdir $(OUT_DIR) \

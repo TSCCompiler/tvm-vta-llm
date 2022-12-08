@@ -131,7 +131,8 @@ def compile_hardware(lanes):
     """
     lib_name = "libverilator_{}".format(lanes)
     lib_name_ext = "{}.so".format(lib_name)
-    lib = os.path.join(verilator_app_path(), lib_name_ext)
+    # lib = os.path.join(verilator_app_path(), lib_name_ext)
+    lib = "/home/share/data/workspace/project/fpga/hls/vta-hw/cmake-build-debug/apps/verilator/add/libverilator.so"
     tvm_dir = "/home/share/data/workspace/project/nn_compiler/tvm"
     if not os.path.isfile(lib):
         opt_lib_name = "LIB_NAME={}".format(lib_name)
