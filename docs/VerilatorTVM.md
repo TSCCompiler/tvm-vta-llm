@@ -49,7 +49,7 @@ Ubuntu 16.04 默认提供的3.8xx也没问题，因为这个硬件也太简单�
 在apps/verilator/add文件夹下，输入make，就可以完成verilog到Top.cpp的生成，并且把Top.cpp和src里面driver.cc编译成一个
 动态库，也就是驱动。这个驱动暴露了上面提到的6个接口。TVM利用这6个接口，就可以实现目标硬件平台的可执行程序。
 
-![](hw_compile_result.jpg)
+![](imgs/hw_compile_result.jpg)
 
 编译的结果如上图所示，libverilator.so就是编译好的驱动动态库。out文件夹下面是根据verilog生成的仿真C++文件，其中的Trace文件
 是我下一期介绍的功能，我改了一下默认的驱动文件，可以获取每一步仿真结果的同时，还生成波形。关于这个驱动的使用，下期介绍了
