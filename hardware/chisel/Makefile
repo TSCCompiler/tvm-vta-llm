@@ -37,7 +37,7 @@ TOP = VTA
 TOP_TEST = Test
 BUILD_NAME = build
 # Set USE_TRACE = 1 to generate a trace during simulation.
-USE_TRACE = 0
+USE_TRACE = 1
 # With USE_TRACE = 1, default trace format is VCD.
 # Set USE_TRACE_FST = 1 to use the FST format.
 # Note that although FST is around two orders of magnitude smaller than VCD
@@ -92,9 +92,9 @@ verilator_opt += -Mdir ${verilator_build_dir}
 verilator_opt += -I$(chisel_build_dir)
 
 ifeq ($(DEBUG), 0)
-	cxx_flags = -nostdlib++ -isystem /usr/lib/llvm-8/include/c++/v1 -lc++ -fPIC -lpthread -Wunused-command-line-argument -O2 -Wall -fvisibility=hidden
+	cxx_flags = -nostdlib++ -isystem /usr/lib/llvm-8/include/c++/v1  -fPIC  -Wunused-command-line-argument -O2 -Wall -fvisibility=hidden
 else
-	cxx_flags = -nostdlib++ -isystem /usr/lib/llvm-8/include/c++/v1 -lc++ -fPIC -lpthread -Wunused-command-line-argument -O0 -g -Wall
+	cxx_flags = -nostdlib++ -isystem /usr/lib/llvm-8/include/c++/v1  -fPIC  -Wunused-command-line-argument -O0 -g -Wall
 endif
 
 cxx_flags += -std=c++17 -Wno-maybe-uninitialized
@@ -115,7 +115,9 @@ cxx_flags += -I$(VTA_HW_PATH)/include
 cxx_flags += -I$(TVM_PATH)/include
 cxx_flags += -I$(TVM_PATH)/3rdparty/dlpack/include
 
-ld_flags = -fPIC -shared
+ld_flags = -fPIC -shared -lc++ -lpthread
+
+
 
 ifeq ($(SANITIZE), 1)
 	ifeq ($(DEBUG), 1)
