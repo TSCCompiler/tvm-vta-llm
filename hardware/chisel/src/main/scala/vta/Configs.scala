@@ -20,10 +20,11 @@
 package vta
 
 import chisel3._
-import vta.util.config._
-import vta.shell._
+import chisel3.stage.ChiselStage
 import vta.core._
+import vta.shell._
 import vta.test._
+import vta.util.config._
 
 /** VTA.
  *
@@ -37,7 +38,8 @@ class DefaultDe10Config extends Config(new CoreConfig ++ new De10Config)
 
 object DefaultPynqConfig extends App {
   implicit val p: Parameters = new DefaultPynqConfig
-  (new chisel3.stage.ChiselStage).emitSystemVerilog(new XilinxShell, args)
+//  (new chisel3.stage.ChiselStage).emitSystemVerilog(new XilinxShell, args)
+  (new ChiselStage).emitVerilog(new XilinxShell, args);
 }
 
 object DefaultF1Config extends App {
@@ -52,7 +54,8 @@ object DefaultDe10Config extends App {
 
 object TestDefaultPynqConfig extends App {
   implicit val p: Parameters = new DefaultPynqConfig
-  (new chisel3.stage.ChiselStage).emitSystemVerilog(new Test, args)
+//  (new chisel3.stage.ChiselStage).emitSystemVerilog(new Test, args)
+  (new ChiselStage).emitVerilog(new Test, args)
 }
 
 object TestDefaultF1Config extends App {

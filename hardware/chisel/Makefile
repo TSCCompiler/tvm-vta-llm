@@ -32,7 +32,7 @@ ifeq (, $(VERILATOR_INC_DIR))
 	endif
 endif
 
-CONFIG = DefaultDe10Config
+CONFIG = DefaultPynqConfig
 TOP = VTA
 TOP_TEST = Test
 BUILD_NAME = build
@@ -187,15 +187,15 @@ $(lib_path): $(verilator_build_dir)/V$(TOP_TEST).cpp $(cxx_objs)
 	$(CXX) $(ld_flags) $(cxx_flags) $(cxx_objs) $(patsubst %.cpp,%.cpp.o,$(shell find $(verilator_build_dir)/*.cpp)) -o $@
 
 verilator: $(verilator_build_dir)/V$(TOP_TEST).cpp
-$(verilator_build_dir)/V$(TOP_TEST).cpp: $(chisel_build_dir)/$(TOP_TEST).$(CONFIG).sv
+$(verilator_build_dir)/V$(TOP_TEST).cpp: $(chisel_build_dir)/$(TOP_TEST).$(CONFIG).v
 	verilator $(verilator_opt) $<
 
 verilog: $(chisel_build_dir)/$(TOP).$(CONFIG).sv
 $(chisel_build_dir)/$(TOP).$(CONFIG).sv:
 	sbt 'runMain vta.$(CONFIG) --target-dir $(chisel_build_dir) -o $(TOP).$(CONFIG)'
 
-verilog_test: $(chisel_build_dir)/$(TOP_TEST).$(CONFIG).sv
-$(chisel_build_dir)/$(TOP_TEST).$(CONFIG).sv:
+verilog_test: $(chisel_build_dir)/$(TOP_TEST).$(CONFIG).v
+$(chisel_build_dir)/$(TOP_TEST).$(CONFIG).v:
 	sbt 'runMain vta.$(CONFIG_TEST) --target-dir $(chisel_build_dir) -o $(TOP_TEST).$(CONFIG)'
 
 unittest:
