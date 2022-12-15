@@ -116,6 +116,11 @@
               <args>
                 <arg>arg1</arg>
               </args>
+              <!-- jvmArgs are optional -->
+              <jvmArgs>
+                <jvmArg>-Xmx128m</jvmArg>
+                <jvmArg>-Djava.library.path=./target/classes</jvmArg>
+              </jvmArgs>
             </launcher>
             <!-- you could define other launcher -->
           </launchers>
