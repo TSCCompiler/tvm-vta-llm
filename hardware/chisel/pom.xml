@@ -38,6 +38,11 @@
       <artifactId>scala-library</artifactId>
       <version>${scala.version}</version>
     </dependency>
+<!--    <dependency>-->
+<!--      <groupId>org.scala-tools</groupId>-->
+<!--      <artifactId>maven-scala-plugin</artifactId>-->
+<!--      <version>2.15.2</version>-->
+<!--    </dependency>-->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -66,8 +71,8 @@
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
       <version>2.10.3</version>
-
     </dependency>
+
 
 <!--    <dependency>-->
 <!--      <groupId>com.fasterxml.jackson.module</groupId>-->
@@ -91,6 +96,14 @@
 
     <plugins>
       <plugin>
+        <groupId>net.alchim31.maven</groupId>
+        <artifactId>scala-maven-plugin</artifactId>
+        <version>4.8.0</version>
+        <configuration>
+          <scalaVersion>${scala.version}</scalaVersion>
+        </configuration>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.1</version>
@@ -99,6 +112,7 @@
           <target>1.8</target>
         </configuration>
       </plugin>
+
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
