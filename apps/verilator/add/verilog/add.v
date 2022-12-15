@@ -20,7 +20,7 @@
 module add #(parameter LANES = 1)(input clock, input reset,
  input wire [32*LANES-1:0] ra,
  input wire [32*LANES-1:0] rb,
- output wire [32-1:0] ry);
+ output wire [32*LANES-1:0] ry);
 
     reg [32-1:0] cc;
 //    reg [32*LANES-1:0] ra;

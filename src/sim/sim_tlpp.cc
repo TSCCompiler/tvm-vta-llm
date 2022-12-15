@@ -21,6 +21,7 @@
  * \file sim_tlpp.cc
  * \brief simulate core level pipe line parallism logic.
  */
+#include <cstdlib>
 #include <vta/sim_tlpp.h>
 TlppVerify::TlppVerify() {
   done_ = 0;
@@ -181,7 +182,12 @@ void TlppVerify::TlppSynchronization(Run_Function run_function,
      * Pick a random core to run first.
      */
     unsigned int seed = time(NULL);
+#if defined(_WIN32)
+    srand(seed);
+    uint8_t core_start = rand() % COREMAX;
+#else
     uint8_t core_start = rand_r(&seed)%COREMAX;
+#endif
     for (int i = 0; i < COREMAX; i++) {
       CoreRun(static_cast<CORE_TYPE>((core_start + i) % COREMAX));
     }

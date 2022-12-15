@@ -101,103 +101,121 @@
         <version>4.8.0</version>
         <configuration>
           <scalaVersion>${scala.version}</scalaVersion>
+          <args>
+            <arg>-Xsource:2.11</arg>
+            <arg>-language:reflectiveCalls</arg>
+            <arg>-deprecation</arg>
+            <arg>-feature</arg>
+            <arg>-Xcheckinit</arg>
+          </args>
+          <launchers>
+            <launcher>
+              <id>defaultXilinx</id>
+              <mainClass>vta.DefaultPynqConfig</mainClass>
+              <!-- args are optional -->
+              <args>
+                <arg>arg1</arg>
+              </args>
+            </launcher>
+            <!-- you could define other launcher -->
+          </launchers>
         </configuration>
       </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.1</version>
-        <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
-        </configuration>
-      </plugin>
+<!--      <plugin>-->
+<!--        <groupId>org.apache.maven.plugins</groupId>-->
+<!--        <artifactId>maven-compiler-plugin</artifactId>-->
+<!--        <version>3.1</version>-->
+<!--        <configuration>-->
+<!--          <source>1.8</source>-->
+<!--          <target>1.8</target>-->
+<!--        </configuration>-->
+<!--      </plugin>-->
 
 
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>2.4</version>
-        <configuration>
-          <archive>
-            <!-- 生成的jar中，包含pom.xml和pom.properties这两个文件 -->
-            <addMavenDescriptor>true</addMavenDescriptor>
-            <!-- 生成MANIFEST.MF的设置 -->
-            <manifest>
-              <!--这个属性特别关键，如果没有这个属性，有时候我们引用的包maven库
-              下面可能会有多个包，并且只有一个是正确的，其余的可能是带时间戳的，
-              此时会在classpath下面把那个带时间戳的给添加上去，然后我们
-              在依赖打包的时候，打的是正确的，所以两头会对不上，报错。-->
-              <useUniqueVersions>false</useUniqueVersions>
-              <!-- 为依赖包添加路径, 这些路径会写在MANIFEST文件的Class-Path下 -->
-              <addClasspath>true</addClasspath>
-              <!-- 这个jar所依赖的jar包添加classPath的时候的前缀，如果这个
-              jar本身和依赖包在同一级目录，则不需要添加-->
-              <classpathPrefix>lib/</classpathPrefix>
-              <!-- jar启动入口类-->
-              <mainClass>com.test.Test</mainClass>
-            </manifest>
-            <manifestEntries>
-              <!-- 在Class-Path下添加配置文件的路径 -->
-              <Class-Path>../config/</Class-Path>
-              <!-- 假如这个项目可能要引入一些外部资源，但是你打包的时候并不想把
-              这些资源文件打进包里面，这个时候你必须在这边额外指定一些这些资源
-              文件的路径，这个位置指定的话，要根据你预期的这些位置去设置，我这边
-              所有jar都在lib下，资源文件都在config下，lib和config是同级的 -->
-              <!-- 同时还需要注意另外一个问题，假如你的pom文件里面配置了
-              <scope>system</scope>,就是你依赖是你本地的资源，这个时候使用
-              这个插件，classPath里面是不会添加，所以你得手动把这个依赖添加进
-              这个地方，用空格隔开就行-->
-            </manifestEntries>
-          </archive>
-          <!-- jar包的位置-->
-          <outputDirectory>${project.build.directory}/lib</outputDirectory>
-          <includes>
-            <!-- 打jar包时，只打包class文件 -->
-            <!-- 有时候可能需要一些其他文件，这边可以配置，包括剔除的文件等等-->
-            <include>**/*.class</include>
-          </includes>
-        </configuration>
-      </plugin>
+<!--      <plugin>-->
+<!--        <groupId>org.apache.maven.plugins</groupId>-->
+<!--        <artifactId>maven-jar-plugin</artifactId>-->
+<!--        <version>2.4</version>-->
+<!--        <configuration>-->
+<!--          <archive>-->
+<!--            &lt;!&ndash; 生成的jar中，包含pom.xml和pom.properties这两个文件 &ndash;&gt;-->
+<!--            <addMavenDescriptor>true</addMavenDescriptor>-->
+<!--            &lt;!&ndash; 生成MANIFEST.MF的设置 &ndash;&gt;-->
+<!--            <manifest>-->
+<!--              &lt;!&ndash;这个属性特别关键，如果没有这个属性，有时候我们引用的包maven库-->
+<!--              下面可能会有多个包，并且只有一个是正确的，其余的可能是带时间戳的，-->
+<!--              此时会在classpath下面把那个带时间戳的给添加上去，然后我们-->
+<!--              在依赖打包的时候，打的是正确的，所以两头会对不上，报错。&ndash;&gt;-->
+<!--              <useUniqueVersions>false</useUniqueVersions>-->
+<!--              &lt;!&ndash; 为依赖包添加路径, 这些路径会写在MANIFEST文件的Class-Path下 &ndash;&gt;-->
+<!--              <addClasspath>true</addClasspath>-->
+<!--              &lt;!&ndash; 这个jar所依赖的jar包添加classPath的时候的前缀，如果这个-->
+<!--              jar本身和依赖包在同一级目录，则不需要添加&ndash;&gt;-->
+<!--              <classpathPrefix>lib/</classpathPrefix>-->
+<!--              &lt;!&ndash; jar启动入口类&ndash;&gt;-->
+<!--              <mainClass>com.test.Test</mainClass>-->
+<!--            </manifest>-->
+<!--            <manifestEntries>-->
+<!--              &lt;!&ndash; 在Class-Path下添加配置文件的路径 &ndash;&gt;-->
+<!--              <Class-Path>../config/</Class-Path>-->
+<!--              &lt;!&ndash; 假如这个项目可能要引入一些外部资源，但是你打包的时候并不想把-->
+<!--              这些资源文件打进包里面，这个时候你必须在这边额外指定一些这些资源-->
+<!--              文件的路径，这个位置指定的话，要根据你预期的这些位置去设置，我这边-->
+<!--              所有jar都在lib下，资源文件都在config下，lib和config是同级的 &ndash;&gt;-->
+<!--              &lt;!&ndash; 同时还需要注意另外一个问题，假如你的pom文件里面配置了-->
+<!--              <scope>system</scope>,就是你依赖是你本地的资源，这个时候使用-->
+<!--              这个插件，classPath里面是不会添加，所以你得手动把这个依赖添加进-->
+<!--              这个地方，用空格隔开就行&ndash;&gt;-->
+<!--            </manifestEntries>-->
+<!--          </archive>-->
+<!--          &lt;!&ndash; jar包的位置&ndash;&gt;-->
+<!--          <outputDirectory>${project.build.directory}/lib</outputDirectory>-->
+<!--          <includes>-->
+<!--            &lt;!&ndash; 打jar包时，只打包class文件 &ndash;&gt;-->
+<!--            &lt;!&ndash; 有时候可能需要一些其他文件，这边可以配置，包括剔除的文件等等&ndash;&gt;-->
+<!--            <include>**/*.class</include>-->
+<!--          </includes>-->
+<!--        </configuration>-->
+<!--      </plugin>-->
 
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-resources-plugin</artifactId>
-        <version>2.6</version>
-        <executions>
-          <!-- 一个execution就是一个目标输入位置，如果想把各种资源拆开放的话，就
-          可以创建多个execution，一个资源文件可以被拷贝多份 -->
-          <execution>
-            <id>copy-resources</id>
-            <phase>package</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <encoding>UTF-8</encoding>
-              <!-- 资源文件的输出目录 -->
-              <outputDirectory>{project.build.directory}/config</outputDirectory>
-              <resources>
-                <!-- 资源文件的原始目录，有多个的话就多配几个 -->
-                <resource>
-                  <!-- 原始目录 -->
-                  <directory>src/main/resources</directory>
-                  <!-- 是否使用过滤器，如果是的话，需要配置一下才行
-                  这个后续再研究，这边没有使用到 -->
-                  <filtering>true</filtering>
-                  <!-- 包含哪些文件以及去除调哪些文件等等 -->
-                  <includes>
-                    <include>**/*.*</include>
-                  </includes>
-                  <excludes>
-                    <exclude>**/*.json</exclude>
-                  </excludes>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
+<!--      <plugin>-->
+<!--        <groupId>org.apache.maven.plugins</groupId>-->
+<!--        <artifactId>maven-resources-plugin</artifactId>-->
+<!--        <version>2.6</version>-->
+<!--        <executions>-->
+<!--          &lt;!&ndash; 一个execution就是一个目标输入位置，如果想把各种资源拆开放的话，就-->
+<!--          可以创建多个execution，一个资源文件可以被拷贝多份 &ndash;&gt;-->
+<!--          <execution>-->
+<!--            <id>copy-resources</id>-->
+<!--            <phase>package</phase>-->
+<!--            <goals>-->
+<!--              <goal>copy-resources</goal>-->
+<!--            </goals>-->
+<!--            <configuration>-->
+<!--              <encoding>UTF-8</encoding>-->
+<!--              &lt;!&ndash; 资源文件的输出目录 &ndash;&gt;-->
+<!--              <outputDirectory>{project.build.directory}/config</outputDirectory>-->
+<!--              <resources>-->
+<!--                &lt;!&ndash; 资源文件的原始目录，有多个的话就多配几个 &ndash;&gt;-->
+<!--                <resource>-->
+<!--                  &lt;!&ndash; 原始目录 &ndash;&gt;-->
+<!--                  <directory>src/main/resources</directory>-->
+<!--                  &lt;!&ndash; 是否使用过滤器，如果是的话，需要配置一下才行-->
+<!--                  这个后续再研究，这边没有使用到 &ndash;&gt;-->
+<!--                  <filtering>true</filtering>-->
+<!--                  &lt;!&ndash; 包含哪些文件以及去除调哪些文件等等 &ndash;&gt;-->
+<!--                  <includes>-->
+<!--                    <include>**/*.*</include>-->
+<!--                  </includes>-->
+<!--                  <excludes>-->
+<!--                    <exclude>**/*.json</exclude>-->
+<!--                  </excludes>-->
+<!--                </resource>-->
+<!--              </resources>-->
+<!--            </configuration>-->
+<!--          </execution>-->
+<!--        </executions>-->
+<!--      </plugin>-->
 
       <plugin>
         <groupId>edu.berkeley.cs</groupId>

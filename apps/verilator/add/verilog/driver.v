@@ -18,7 +18,7 @@
  */
 
 `ifndef LANES
-`define LANES 2
+`define LANES 4
 `endif
 
 module driver (
