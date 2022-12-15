@@ -53,7 +53,8 @@ def create_module_add(shape, dtype):
     x = relay.var("x", shape=shape, dtype=dtype)
     y = relay.var("y", shape=shape, dtype=dtype)
     z = relay.add(x, y)
-    f = relay.Function([x, y], z)
+    w = relay.subtract(z, y)
+    f = relay.Function([x, y], w)
     mod = tvm.IRModule()
     mod["main"] = f
     return mod

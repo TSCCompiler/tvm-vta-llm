@@ -91,10 +91,12 @@ def offload(mod):
     mod : Module
         The output module with offloaded ops.
     """
-
+    print(mod)
     backend = "verilator"
     mod = transform.AnnotateTarget([backend])(mod)
+    print(mod)
     mod = transform.PartitionGraph()(mod)
+    print(mod)
     return mod
 
 
