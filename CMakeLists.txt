@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.15)
 project(vta-hw)
-
+set(CMAKE_CXX_STANDARD 17)
+include(cmake/Utils.cmake)
+include(cmake/cross_platform.cmake)
+include(cmake/tvm_configure.cmake)
+include(cmake/VTA.cmake)
 add_subdirectory(hardware/xilinx)
 add_subdirectory(apps/verilator/add)
+

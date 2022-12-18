@@ -24,6 +24,8 @@ add_custom_command(OUTPUT ${BUILD_DIR}/${TOP_NAME}.cpp
         ${BUILD_DIR}/${TOP_NAME}__Syms.cpp
         ${BUILD_DIR}/${TOP_NAME}__Trace.cpp
         ${BUILD_DIR}/${TOP_NAME}__Trace__Slow.cpp
+        ${VERILATOR_INC_DIR}/verilated.cpp
+        ${VERILATOR_INC_DIR}/verilated_vcd_c.cpp
         COMMAND "${VERILATOR_BIN}"
         ARGS "-Wno-BLKANDNBLK"
         -Wno-PINMISSING
