@@ -30,6 +30,9 @@ endif ()
 message(STATUS "VTA HW PATH ${VTA_HW_PATH}")
 
 
+#add_definitions("-DTVM_EXPORTS=")
+
+
 if(MSVC)
   message(STATUS "VTA build is skipped in Windows..")
 elseif(NOT EXISTS ${VTA_HW_PATH})
@@ -65,9 +68,10 @@ elseif(PYTHON)
     list(APPEND FSIM_RUNTIME_SRCS ${VTA_HW_PATH}/src/sim/sim_tlpp.cc)
     list(APPEND FSIM_RUNTIME_SRCS ${VTA_HW_PATH}/src/vmem/virtual_memory.cc)
     # Target lib: vta_fsim
+    message(STATUS "${FSIM_RUNTIME_SRCS}")
     add_library(vta_fsim SHARED
             ${FSIM_RUNTIME_SRCS}
-            ${VTA_HW_PATH}/src/tvm_runtime/tvm_runtime_pack.cc
+#            ${VTA_HW_PATH}/src/tvm_runtime/tvm_runtime_pack.cc
             )
     target_include_directories(vta_fsim SYSTEM PUBLIC ${VTA_HW_PATH}/include)
     target_compile_definitions(vta_fsim PUBLIC DMLC_USE_LOGGING_LIBRARY=<tvm/runtime/logging.h>)
@@ -84,6 +88,7 @@ elseif(PYTHON)
     target_compile_definitions(vta_fsim PUBLIC USE_FSIM_TLPP)
     target_link_libraries(vta_fsim
 #            tvm_runtime
+            D:/workspace/project/nn_compiler/tvm/cmake-build-debug-mingw_x86_64/libtvm.dll.a
             )
   endif()
 

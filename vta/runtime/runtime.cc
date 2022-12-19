@@ -83,9 +83,22 @@ class AlignmentAllocator : public std::allocator<T> {
 
   inline const_pointer address(const_reference r) const { return &r; }
 
-  inline pointer allocate(size_type n) { return (pointer)memalign(N, n * sizeof(value_type)); }
+  inline pointer allocate(size_type n) {
+//      printf("begin to allocate n %d, N %d\n", n, N);
+      auto p = (pointer)memalign(N, n * sizeof(value_type));
+//      printf("after allocate\n");
+      return p;
+  }
 
-  inline void deallocate(pointer p, size_type) { free(p); }
+  inline void deallocate(pointer p, size_type) {
+//      printf("begin to free\n");
+#if defined(__MINGW32__)
+      _aligned_free(p);
+#else
+      free(p);
+#endif
+//      printf("end free\n");
+  }
 
   inline void construct(pointer p, const value_type& wert) { new (p) value_type(wert); }
 
@@ -427,7 +440,11 @@ class BaseQueue {
   // End location of current SRAM write in FIFO mode
   uint32_t sram_end_{0};
   // The buffer in DRAM
+//#if defined(_WIN32)
+//        std::vector<T> dram_buffer_;
+//#else
   std::vector<T, AlignmentAllocator<T, ALLOC_ALIGNMENT>> dram_buffer_;
+//#endif
   // FPGA accessible buffer
   void* fpga_buff_{NULL};
   // Physical address of the FPGA buffer
@@ -543,7 +560,11 @@ class UopQueue : public BaseQueue<VTAUop> {
       offset += ksize;
     }
     VTAMemCopyFromHost(static_cast<char*>(fpga_buff_), lbuf, total_size);
+#if defined(__MINGW32__)
+      _aligned_free(lbuf);
+#else
     free(lbuf);
+#endif
 
     // Flush if we're using a shared memory system
     // and if interface is non-coherent
@@ -923,12 +944,16 @@ class InsnQueue : public BaseQueue<VTAGenericInsn> {
   /*! \return Add new instruction to the buffer. */
   VTAGenericInsn* NextInsn() {
     VTAGenericInsn insn;
+//    printf("begin to push back\n");
     dram_buffer_.push_back(insn);
+//    printf("end to push back\n");
     return &dram_buffer_.back();
   }
   // Create a new instruction for a given stage
   VTAGenericInsn* Create(PipelineStage stage) {
+//      printf("begin to call next insn %d\n", stage);
     VTAGenericInsn* gptr = NextInsn();
+//    printf("end to call \n");
     VTAMemInsn* mptr = reinterpret_cast<VTAMemInsn*>(gptr);
     mptr->pop_prev_dep = pending_pop_prev_[stage];
     mptr->pop_next_dep = pending_pop_next_[stage];
@@ -1053,7 +1078,9 @@ class CommandQueue {
                     uint32_t x_stride, uint32_t x_pad_before, uint32_t y_pad_before,
                     uint32_t x_pad_after, uint32_t y_pad_after, uint32_t dst_sram_index,
                     uint32_t dst_memory_type) {
+//      printf("begin to create mem insn\n");
     VTAMemInsn* insn = insn_queue_.CreateMemInsn(dst_memory_type);
+//    printf("after create mem insn\n");
     insn->opcode = VTA_OPCODE_LOAD;
     insn->memory_type = dst_memory_type;
     insn->sram_base = dst_sram_index;
@@ -1066,7 +1093,9 @@ class CommandQueue {
     insn->y_pad_1 = y_pad_after;
     insn->x_pad_0 = x_pad_before;
     insn->x_pad_1 = x_pad_after;
+//      printf("begin to check overflow\n");
     this->CheckInsnOverFlow();
+//      printf("after check over flow\n");
   }
 
   void StoreBuffer2D(uint32_t src_sram_index, uint32_t src_memory_type, void* dst_dram_addr,
@@ -1107,6 +1136,7 @@ class CommandQueue {
   }
 
   void Synchronize(uint32_t wait_cycles) {
+//      printf("begin to Sync\n");
     // Insert dependences to force serialization
     if (debug_flag_ & VTA_DEBUG_FORCE_SERIAL) {
       insn_queue_.RewriteForceSerial();
@@ -1125,8 +1155,10 @@ class CommandQueue {
     // Check if there are no instruction to execute at all
     if (insn_queue_.count() == 0) return;
     // Synchronization for the queues
+//      printf("before auto read barrier\n");
     uop_queue_.AutoReadBarrier();
     insn_queue_.AutoReadBarrier();
+//      printf("end auto read barrier \n");
     // Dump instructions if debug enabled
     if (debug_flag_ & VTA_DEBUG_DUMP_INSN) {
       insn_queue_.DumpInsn();
@@ -1143,6 +1175,7 @@ class CommandQueue {
     // Reset buffers
     uop_queue_.Reset();
     insn_queue_.Reset();
+//      printf("end sync\n");
   }
 
   // Get record kernel
@@ -1290,7 +1323,10 @@ class CommandQueue {
     }
   }
   // Auto sync when instruction overflow
-  void AutoSync() { this->Synchronize(1 << 31); }
+  void AutoSync() {
+//      printf("auto sync\n");
+      this->Synchronize(1 << 31);
+  }
 
   // Internal debug flag
   int debug_flag_{0};
@@ -1306,9 +1342,14 @@ class CommandQueue {
 
 }  // namespace vta
 
-void* VTABufferAlloc(size_t size) { return vta::DataBuffer::Alloc(size); }
+void* VTABufferAlloc(size_t size) {
+//    printf("enter vta buffer alloc\n");
+    return vta::DataBuffer::Alloc(size);
+}
 
-void VTABufferFree(void* buffer) { vta::DataBuffer::Free(vta::DataBuffer::FromHandle(buffer)); }
+void VTABufferFree(void* buffer) {
+//    printf("enter vta buffer free\n");
+    vta::DataBuffer::Free(vta::DataBuffer::FromHandle(buffer)); }
 
 void VTABufferCopy(const void* from, size_t from_offset, void* to, size_t to_offset, size_t size,
                    int kind_mask) {
@@ -1337,7 +1378,9 @@ void VTABufferCopy(const void* from, size_t from_offset, void* to, size_t to_off
   }
 }
 
-VTACommandHandle VTATLSCommandHandle() { return vta::CommandQueue::ThreadLocal().get(); }
+VTACommandHandle VTATLSCommandHandle() {
+//    printf("got vta command handle\n");
+    return vta::CommandQueue::ThreadLocal().get(); }
 
 void VTARuntimeShutdown() { vta::CommandQueue::Shutdown(); }
 
@@ -1346,6 +1389,7 @@ void VTASetDebugMode(VTACommandHandle cmd, int debug_flag) {
 }
 
 void* VTABufferCPUPtr(VTACommandHandle cmd, void* buffer) {
+//    printf("enter vta buffer cpu ptr\n");
   auto data_buf = vta::DataBuffer::FromHandle(buffer);
   if (data_buf) {
     return data_buf->virt_addr();
@@ -1356,43 +1400,58 @@ void* VTABufferCPUPtr(VTACommandHandle cmd, void* buffer) {
 
 void VTAWriteBarrier(VTACommandHandle cmd, void* buffer, uint32_t elem_bits, uint32_t start,
                      uint32_t extent) {
+//    printf("vta write barrier\n");
   static_cast<vta::CommandQueue*>(cmd)->WriteBarrier(buffer, elem_bits, start, extent);
 }
 
 void VTAReadBarrier(VTACommandHandle cmd, void* buffer, uint32_t elem_bits, uint32_t start,
                     uint32_t extent) {
+//    printf("vta read barrier\n");
   static_cast<vta::CommandQueue*>(cmd)->ReadBarrier(buffer, elem_bits, start, extent);
+//    printf("ater vta read barrier\n");
 }
 
 void VTALoadBuffer2D(VTACommandHandle cmd, void* src_dram_addr, uint32_t src_elem_offset,
                      uint32_t x_size, uint32_t y_size, uint32_t x_stride, uint32_t x_pad_before,
                      uint32_t y_pad_before, uint32_t x_pad_after, uint32_t y_pad_after,
                      uint32_t dst_sram_index, uint32_t dst_memory_type) {
+//    printf("vta load buffer 2d %p\n", cmd);
   static_cast<vta::CommandQueue*>(cmd)->LoadBuffer2D(
       src_dram_addr, src_elem_offset, x_size, y_size, x_stride, x_pad_before, y_pad_before,
       x_pad_after, y_pad_after, dst_sram_index, dst_memory_type);
+//    printf("finish vta load buffer 2d\n");
 }
 
 void VTAStoreBuffer2D(VTACommandHandle cmd, uint32_t src_sram_index, uint32_t src_memory_type,
                       void* dst_dram_addr, uint32_t dst_elem_offset, uint32_t x_size,
                       uint32_t y_size, uint32_t x_stride) {
+//    printf("vta store buffer 2d\n");
   static_cast<vta::CommandQueue*>(cmd)->StoreBuffer2D(
       src_sram_index, src_memory_type, dst_dram_addr, dst_elem_offset, x_size, y_size, x_stride);
+//    printf("leave vta store buffer 2d\n");
 }
 
 void VTAUopPush(uint32_t mode, uint32_t reset_out, uint32_t dst_index, uint32_t src_index,
                 uint32_t wgt_index, uint32_t opcode, uint32_t use_imm, int32_t imm_val) {
+//    printf("enter vta Uop Push\n");
   vta::CommandQueue::ThreadLocal()->record_kernel()->Push(mode, reset_out, dst_index, src_index,
                                                           wgt_index, opcode, use_imm, imm_val);
+//    printf("leave uop push\n");
 }
 
 void VTAUopLoopBegin(uint32_t extent, uint32_t dst_factor, uint32_t src_factor,
                      uint32_t wgt_factor) {
+//    printf("enter uop loop begin\n");
   vta::CommandQueue::ThreadLocal()->record_kernel()->PushLoopBegin(extent, dst_factor, src_factor,
                                                                    wgt_factor);
+//    printf("leave uop loop begin\n");
 }
 
-void VTAUopLoopEnd() { vta::CommandQueue::ThreadLocal()->record_kernel()->PushLoopEnd(); }
+void VTAUopLoopEnd() {
+//    printf("enter vta uop loop end\n");
+    vta::CommandQueue::ThreadLocal()->record_kernel()->PushLoopEnd();
+//    printf("leave vta uop loop end\n");
+}
 
 int VTAPushGEMMOp(void** uop_handle, int (*finit)(void*), void* signature, int nbytes) {
   vta::CommandQueue::ThreadLocal()->PushGEMMOp(uop_handle, finit, signature, nbytes);
@@ -1400,7 +1459,9 @@ int VTAPushGEMMOp(void** uop_handle, int (*finit)(void*), void* signature, int n
 }
 
 int VTAPushALUOp(void** uop_handle, int (*finit)(void*), void* signature, int nbytes) {
+//    printf("enter push alu op\n");
   vta::CommandQueue::ThreadLocal()->PushALUUop(uop_handle, finit, signature, nbytes);
+//    printf("leave push alu op\n");
   return 0;
 }
 
@@ -1415,5 +1476,7 @@ int VTADepPop(VTACommandHandle cmd, int from_qid, int to_qid) {
 }
 
 void VTASynchronize(VTACommandHandle cmd, uint32_t wait_cycles) {
+//    printf("enter sync vta\n");
   static_cast<vta::CommandQueue*>(cmd)->Synchronize(wait_cycles);
+//    printf("leave sync vta\n");
 }
