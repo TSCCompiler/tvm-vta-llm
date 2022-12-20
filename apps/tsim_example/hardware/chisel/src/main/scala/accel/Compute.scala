@@ -50,7 +50,7 @@ class Compute(implicit config: AccelConfig, p: Parameters) extends Module {
   val const = io.vals(0)
   val length = io.vals(1)
   val cycles = RegInit(0.U(config.regBits.W))
-  val reg = Reg(chiselTypeOf(io.mem.rd.bits))
+  val reg = Reg(chiselTypeOf(io.mem.rd.bits.data))
   val cnt = Reg(UInt(config.regBits.W))
   val raddr = Reg(UInt(config.ptrBits.W))
   val waddr = Reg(UInt(config.ptrBits.W))
@@ -115,15 +115,19 @@ class Compute(implicit config: AccelConfig, p: Parameters) extends Module {
   io.mem.req.ar_addr := raddr
   io.mem.req.aw_addr := waddr
 
+  io.mem.req.ar_id := 0.U
+
+  io.mem.wr.bits.strb := 0.U
+
   // read
   when(state === sReadData && io.mem.rd.valid) {
-    reg := io.mem.rd.bits // + io.vals(0) // + "1" //const
+    reg := io.mem.rd.bits.data + const // + io.vals(0) // + "1" //const
   }
   io.mem.rd.ready := state === sReadData
 
   // write
   io.mem.wr.valid := state === sWriteData
-  io.mem.wr.bits := reg
+  io.mem.wr.bits.data := reg
 
   // count read/write
   when(state === sIdle) {

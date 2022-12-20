@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>accel</groupId>
+  <artifactId>accel</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <properties>
+    <scala.version>2.12.13</scala.version>
+  </properties>
+
+  <name>accel</name>
+  <!-- FIXME change it to the projects website -->
+  <url>http://www.example.com</url>
+<!--  <packaging>war</packaging>-->
+
+<!--  <repositories>-->
+<!--    <repository>-->
+<!--      <id>scala-tools.org</id>-->
+<!--      <name>Scala-Tools Maven2 Repository</name>-->
+<!--      <url>http://scala-tools.org/repo-releases</url>-->
+<!--    </repository>-->
+<!--  </repositories>-->
+
+<!--  <pluginRepositories>-->
+<!--    <pluginRepository>-->
+<!--      <id>scala-tools.org</id>-->
+<!--      <name>Scala-Tools Maven2 Repository</name>-->
+<!--      <url>http://scala-tools.org/repo-releases</url>-->
+<!--    </pluginRepository>-->
+<!--  </pluginRepositories>-->
+
+  <dependencies>
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-library</artifactId>
+      <version>${scala.version}</version>
+    </dependency>
+<!--    <dependency>-->
+<!--      <groupId>org.scala-tools</groupId>-->
+<!--      <artifactId>maven-scala-plugin</artifactId>-->
+<!--      <version>2.15.2</version>-->
+<!--    </dependency>-->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.4</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.specs</groupId>
+      <artifactId>specs</artifactId>
+      <version>1.2.5</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>edu.berkeley.cs</groupId>
+      <artifactId>chisel3_2.12</artifactId>
+      <version>3.4.3</version>
+    </dependency>
+
+    <dependency>
+      <groupId>edu.berkeley.cs</groupId>
+      <artifactId>chisel-iotesters_2.12</artifactId>
+      <version>1.5.3</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.10.3</version>
+    </dependency>
+    <dependency>
+      <groupId>vat</groupId>
+      <artifactId>vta</artifactId>
+      <version>0.1.0-SNAPSHOT</version>
+    </dependency>
+
+
+<!--    <dependency>-->
+<!--      <groupId>com.fasterxml.jackson.module</groupId>-->
+<!--      <artifactId>jackson-module-scala</artifactId>-->
+<!--      <version>2.10.3</version>-->
+
+<!--    </dependency>-->
+
+  </dependencies>
+
+  <build>
+    <sourceDirectory>src/main/scala</sourceDirectory>
+    <testSourceDirectory>src/test/scala</testSourceDirectory>
+    <extensions>
+      <extension>
+        <groupId>kr.motd.maven</groupId>
+        <artifactId>os-maven-plugin</artifactId>
+        <version>1.6.2</version>
+      </extension>
+    </extensions>
+
+    <plugins>
+      <plugin>
+        <groupId>net.alchim31.maven</groupId>
+        <artifactId>scala-maven-plugin</artifactId>
+        <version>4.8.0</version>
+        <configuration>
+          <scalaVersion>${scala.version}</scalaVersion>
+          <args>
+            <arg>-Xsource:2.11</arg>
+            <arg>-language:reflectiveCalls</arg>
+            <arg>-deprecation</arg>
+            <arg>-feature</arg>
+            <arg>-Xcheckinit</arg>
+          </args>
+          <launchers>
+            <launcher>
+              <id>defaultXilinx</id>
+              <mainClass>vta.DefaultPynqConfig</mainClass>
+              <!-- args are optional -->
+              <args>
+                <arg>arg1</arg>
+              </args>
+              <!-- jvmArgs are optional -->
+              <jvmArgs>
+                <jvmArg>-Xmx128m</jvmArg>
+                <jvmArg>-Djava.library.path=./target/classes</jvmArg>
+              </jvmArgs>
+            </launcher>
+            <!-- you could define other launcher -->
+          </launchers>
+        </configuration>
+      </plugin>
+
+<!--      <plugin>-->
+<!--        <groupId>edu.berkeley.cs</groupId>-->
+<!--        <artifactId>chisel3-plugin</artifactId>-->
+<!--        <version>3.4.3</version>-->
+<!--      </plugin>-->
+
+<!--      <plugin>-->
+<!--        <groupId>org.scalamacros</groupId>-->
+<!--        <artifactId>paradise</artifactId>-->
+<!--        <version>2.1.1</version>-->
+<!--      </plugin>-->
+    </plugins>
+
+  </build>
+</project>

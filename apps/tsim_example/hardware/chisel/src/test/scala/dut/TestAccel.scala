@@ -20,6 +20,7 @@
 package test
 
 import chisel3._
+import chisel3.stage.ChiselStage
 //import chisel3.experimental.MultiIOModule
 import vta.dpi._
 import accel._
@@ -72,5 +73,6 @@ class TestAccel(implicit p: Parameters) extends MultiIOModule {
 /** Generate TestAccel as top module */
 object Elaborate extends App {
     implicit val p: Parameters = new TestConfig
-  chisel3.Driver.execute(args, () => new TestAccel)
+  (new ChiselStage).emitVerilog(new TestAccel, args);
+//  chisel3.Driver.execute(args, () => new TestAccel)
 }

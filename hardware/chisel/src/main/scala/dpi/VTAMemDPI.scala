@@ -78,7 +78,7 @@ class VTAMemDPIMaster(implicit val p: Parameters) extends Bundle {
 
 /** Memory client interface.
  *
- * This interface is tipically used by the Host
+ * This interface is typically used by the Host
  */
 class VTAMemDPIClient(implicit val p: Parameters) extends Bundle {
   val req = new Bundle {
