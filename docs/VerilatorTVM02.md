@@ -13,7 +13,7 @@
 里面system verilog编写的超小型cpu，改成了verilog，并且在vivado里面进行了综合。这个小型的cpu
 有load，fetch两个指令，仅实现了把两个数相加这一个功能。整个计算的逻辑是把第一个数load到寄存器A，
 再把第二个数load到寄存器B，在每个上升沿硬件自动取寄存器A的数加上寄存器B的数，并放到寄存器C里面去。
-遇到fetch指令的时候，就把寄存器C里面的结果返回给用户。 
+遇到fetch指令的时候，就把寄存器C里面的结果返回给用户。 相关的代码已经开源：[传送门](https://github.com/TSCCompiler/vta_tvm_examples)
 * vivado综合以及verilog testbench  
 指令解析子模块  
 用户给过来的指令包含opcode，id，addr，value 这4个部分构成了一个简单的指令集  
