@@ -58,6 +58,11 @@ object TestDefaultPynqConfig extends App {
   (new ChiselStage).emitVerilog(new Test, args)
 }
 
+object TestPynqMAC extends App {
+  implicit val p: Parameters = new DefaultPynqConfig
+  (new ChiselStage).emitVerilog(new MAC, args)
+}
+
 object TestDefaultF1Config extends App {
   implicit val p: Parameters = new DefaultF1Config
   (new chisel3.stage.ChiselStage).emitSystemVerilog(new Test, args)

@@ -1,0 +1,1 @@
+verilator -Wno-BLKANDNBLK -Wno-PINMISSING -Wno-STMTDLY -Wno-WIDTH -Wno-UNOPTFLAT -DLANES=4 --cc --trace --prefix TOP --top-module "driver" --Mdir ./build *.v

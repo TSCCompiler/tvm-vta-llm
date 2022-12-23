@@ -1,0 +1,12 @@
+if (NOT VERILATOR_DIR)
+    set(VERILATOR_DIR /usr/local/bin/)
+endif ()
+set(VERILATOR_BIN "${VERILATOR_DIR}/verilator")
+if (NOT VERILATOR_INC_DIR)
+    set(VERILATOR_INC_DIR "${VERILATOR_DIR}/../share/verilator/include")
+endif ()
+
+include_directories("${TVM_DIR}/src/runtime/contrib/verilator")
+include_directories("${TVM_DIR}/include")
+include_directories("${TVM_DIR}/3rdparty/dlpack/include")
+include_directories(${VERILATOR_INC_DIR})
