@@ -98,7 +98,7 @@ void VTADPIInit(VTAContextHandle handle,
 void vl_finish(const char* filename, int linenum, const char* hier) {
   Verilated::gotFinish(true);
 }
-
+double sc_time_stamp() { return 0; }
 int VTADPISim() {
   uint64_t trace_count = 0;
   Verilated::flushCall();

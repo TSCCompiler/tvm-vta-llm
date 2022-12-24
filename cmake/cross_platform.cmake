@@ -23,3 +23,7 @@ else()
     add_definitions("-Dlinux")
     message(STATUS "host is LINUX")
 endif ()
+
+set(BASEDIR "${CMAKE_BINARY_DIR}")
+
+set(LIBRARY_OUTPUT_PATH "${BASEDIR}")

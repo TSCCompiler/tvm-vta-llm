@@ -6,6 +6,7 @@ include(cmake/cross_platform.cmake)
 include(cmake/tvm_configure.cmake)
 include(cmake/VTA.cmake)
 add_subdirectory(hardware/xilinx)
+add_subdirectory(hardware/chisel)
 add_subdirectory(apps/verilator/add)
 add_subdirectory(apps/verilator/MAC)
 

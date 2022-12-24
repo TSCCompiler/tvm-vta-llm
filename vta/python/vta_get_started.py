@@ -71,8 +71,64 @@ env = vta.get_env()
 
 # We'll need the TVM RPC module and the VTA simulator module
 from tvm import rpc
+import tvm._ffi
+from tvm.runtime.module import _ffi_api
 from tvm.contrib import utils
 from vta.testing import simulator
+
+
+def load_module_with_lib(path, fmt="", extlib=[]):
+    """Load module from file.
+
+    Parameters
+    ----------
+    path : str
+        The path to the module file.
+
+    fmt : str, optional
+        The format of the file, if not specified
+        it will be inferred from suffix of the file.
+
+    Returns
+    -------
+    module : runtime.Module
+        The loaded module
+
+    Note
+    ----
+    This function will automatically call
+    cc.create_shared if the path is in format .o or .tar
+    """
+    if os.path.isfile(path):
+        path = os.path.realpath(path)
+    else:
+        raise ValueError("cannot find file %s" % path)
+
+    # n_options = []
+    # for opt in extlib:
+    #     n_options.append("l"+opt)
+    n_options = ["-l"+opt for opt in extlib]
+
+    # High level handling for .o and .tar file.
+    # We support this to be consistent with RPC module load.
+    if path.endswith(".o"):
+        # Extra dependencies during runtime.
+        from tvm.contrib import cc as _cc
+
+        _cc.create_shared(path + ".so", path, options=n_options)
+        path += ".so"
+    elif path.endswith(".tar"):
+        # Extra dependencies during runtime.
+        from tvm.contrib import cc as _cc, utils as _utils, tar as _tar
+
+        tar_temp = _utils.tempdir(custom_path=path.replace(".tar", ""))
+        _tar.untar(path, tar_temp.temp_dir)
+        files = [tar_temp.relpath(x) for x in tar_temp.listdir()]
+        _cc.create_shared(path + ".so", files)
+        path += ".so"
+    # Redirect to the load API
+    return _ffi_api.ModuleLoadFromFile(path, fmt)
+
 
 # We read the Pynq RPC host IP address and port number from the OS environment
 host = os.environ.get("VTA_RPC_HOST", "192.168.2.99")
@@ -101,6 +157,17 @@ elif env.TARGET in ("sim", "tsim", "intelfocl"):
     if env.TARGET in ["intelfocl"]:
         # program intelfocl aocx
         vta.program_fpga(remote, bitstream="vta.bitstream")
+
+@tvm._ffi.register_func("tvm.rpc.server.load_module", override=True)
+def load_module(file_name):
+    args = str(file_name).split(';')
+    file_name = args[0]
+    ext_lib = args[1:]
+    """Load module from remote side."""
+    path = file_name
+    m = load_module_with_lib(path, extlib=ext_lib)
+    # logger.info("load_module %s", path)
+    return m
 
 ######################################################################
 # Computation Declaration
@@ -340,15 +407,15 @@ my_vadd.save(os.path.join(temp, "vadd.o"))
 # print(temp.relpath("vadd.o"))
 
 # Send the executable over RPC
-remote.upload("D:/workspace/project/nn_compiler/vta-hw/vadd.so")
-# remote.upload(os.path.join(temp, "vadd.o"))
+# remote.upload("D:/workspace/project/nn_compiler/vta-hw/vadd.so")
+remote.upload(os.path.join(temp, "vadd.o"))
 ######################################################################
 # Loading the Module
 # ~~~~~~~~~~~~~~~~~~
 # We can load the compiled module from the file system to run the code.
 
-# f = remote.load_module("vadd.o")
-f = remote.load_module("vadd.so")
+f = remote.load_module(os.path.join(temp, "vadd.o")+";D:/workspace/project/nn_compiler/vta-hw/cmake-build-debug-mingw_x86_64/libvta_tsim.dll.a.lib")
+# f = remote.load_module("vadd.so")
 
 env = vta.get_env()
 # clang -O2 -shared -o C:\Users\sunhh\AppData\Local\Temp\tmp32i7q4sa\vadd.o.so C:\Users\sunhh\AppData\Local\Temp\tmp32i7q4sa\vadd.o

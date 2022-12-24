@@ -24,6 +24,7 @@ import chisel3.stage.ChiselStage
 import vta.core._
 import vta.shell._
 import vta.test._
+import vta.util.OnePortMem
 import vta.util.config._
 
 /** VTA.
@@ -61,6 +62,12 @@ object TestDefaultPynqConfig extends App {
 object TestPynqMAC extends App {
   implicit val p: Parameters = new DefaultPynqConfig
   (new ChiselStage).emitVerilog(new MAC, args)
+}
+
+object TestPynqOnePortMem extends App{
+  implicit val p: Parameters = new DefaultPynqConfig
+  (new ChiselStage).emitVerilog(new OnePortMem(UInt(16.W), 24, ""),
+    args);
 }
 
 object TestDefaultF1Config extends App {

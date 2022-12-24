@@ -119,8 +119,8 @@ class TestSyncQueueLongRead(c: SyncQueueTestWrapper[UInt]) extends PeekPokeTeste
     val qsize = peek(c.io.tq.count)
     require(qsize == 0, s"-F- An empty queue is expected ${qsize}")
 
-    poke (c.io.tq.deq.ready, 0)
-    poke (c.io.tq.enq.valid, 0)
+    poke(c.io.tq.deq.ready, 0)
+    poke(c.io.tq.enq.valid, 0)
     chr.ready(1)
     step(1)
 

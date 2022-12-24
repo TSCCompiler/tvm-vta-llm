@@ -87,14 +87,15 @@ elseif(PYTHON)
     endif(APPLE)
     target_compile_definitions(vta_fsim PUBLIC USE_FSIM_TLPP)
     target_link_libraries(vta_fsim
-#            tvm_runtime
             D:/workspace/project/nn_compiler/tvm/cmake-build-debug-mingw_x86_64/libtvm.dll.a
             )
   endif()
 
   # Cycle accurate simulator driver build
   if(USE_VTA_TSIM)
-    if(DEFINED ENV{VERILATOR_INC_DIR})
+    if (VERILATOR_INC_DIR)
+      message(STATUS "set verilator inc dir : ${VERILATOR_INC_DIR}")
+    elseif(DEFINED ENV{VERILATOR_INC_DIR})
       set(VERILATOR_INC_DIR $ENV{VERILATOR_INC_DIR})
     elseif (EXISTS /usr/local/share/verilator/include)
       set(VERILATOR_INC_DIR /usr/local/share/verilator/include)
@@ -122,6 +123,9 @@ elseif(PYTHON)
     if(APPLE)
       set_property(TARGET vta_fsim APPEND PROPERTY LINK_FLAGS "-undefined dynamic_lookup")
     endif(APPLE)
+    target_link_libraries(vta_tsim
+            D:/workspace/project/nn_compiler/tvm/cmake-build-debug-mingw_x86_64/libtvm.dll.a
+            )
   endif()
 
   # VTA FPGA driver sources
