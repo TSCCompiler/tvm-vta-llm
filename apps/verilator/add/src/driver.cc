@@ -47,12 +47,12 @@ extern "C" VerilatorHandle VerilatorAlloc() {
     top->trace(context->tfp, 0);
   context->tfp->open("./wave.vcd");
 
-  std::cout << "set wave traced\n";
+//  std::cout << "set wave traced\n";
   return static_cast<VerilatorHandle>(context);
 }
 
 extern "C" void VerilatorDealloc(VerilatorHandle handle) {
-    std::cout << "dealloc context\n";
+//    std::cout << "dealloc context\n";
     auto* context = static_cast<VerilatedContextHandle*>(handle);
     delete context->top;
     context->tfp->close();
@@ -61,7 +61,7 @@ extern "C" void VerilatorDealloc(VerilatorHandle handle) {
 }
 
 extern "C" int VerilatorRead(VerilatorHandle handle, int id, int addr) {
-    std::cout << "begin to read\n";
+//    std::cout << "begin to read\n";
     auto* context = static_cast<VerilatedContextHandle*>(handle);
 
   TOP* top = context->top;// static_cast<Top*>(handle);
@@ -73,7 +73,7 @@ extern "C" int VerilatorRead(VerilatorHandle handle, int id, int addr) {
 }
 
 extern "C" void VerilatorWrite(VerilatorHandle handle, int id, int addr, int value) {
-    std::cout << "begin to write\n";
+//    std::cout << "begin to write\n";
     auto* context = static_cast<VerilatedContextHandle*>(handle);
     TOP* top = context->top;
   top->opcode = 1;
@@ -85,7 +85,7 @@ extern "C" void VerilatorWrite(VerilatorHandle handle, int id, int addr, int val
 
 extern "C" void VerilatorReset(VerilatorHandle handle, int n) {
     auto* context = static_cast<VerilatedContextHandle*>(handle);
-    std::cout << "enter verilator reset " << n;
+//    std::cout << "enter verilator reset " << n;
     TOP* top = context->top;
   top->opcode = 0;
   top->clock = 0;
