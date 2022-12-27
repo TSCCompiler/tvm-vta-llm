@@ -24,13 +24,14 @@ import argparse
 def pkg_config(cfg):
     """Returns PkgConfig pkg config object."""
     pkg_config_py = os.path.join(
-            os.path.dirname(os.path.abspath(os.path.expanduser(__file__))),
-            "pkg_config.py"
+        os.path.dirname(os.path.abspath(os.path.expanduser(__file__))),
+        "pkg_config.py"
     )
     libpkg = {"__file__": pkg_config_py}
     exec(compile(open(pkg_config_py, "rb").read(), pkg_config_py, "exec"), libpkg, libpkg)
     PkgConfig = libpkg["PkgConfig"]
     return PkgConfig(cfg)
+
 
 def gen_target_name(pkg):
     """Emit target macro from config"""
@@ -45,6 +46,7 @@ def gen_target_name(pkg):
     else:
         return None
 
+
 def gen_target_cflags(pkg):
     """Emit target cflags from config"""
     cflags_str = " ".join(pkg.cflags)
@@ -53,12 +55,14 @@ def gen_target_cflags(pkg):
         cflags_str += " -D{}".format(target)
     return cflags_str
 
+
 def calculate_num_wgt_uram(pkg):
     """Calculate number of weight uram from config"""
     if hasattr(pkg, 'num_wgt_mem_uram'):
         return pkg.num_wgt_mem_uram
     else:
         return 0
+
 
 def gen_tcl_vivado(pkg, file):
     """Export variables to tcl file"""
@@ -96,6 +100,7 @@ def gen_tcl_vivado(pkg, file):
         fo.write("\nconst LOAD_BASE_ADDR {}".format(pkg.load_base_addr))
         fo.write("\nconst COMPUTE_BASE_ADDR {}".format(pkg.compute_base_addr))
         fo.write("\nconst STORE_BASE_ADDR {}".format(pkg.store_base_addr))
+
 
 def main():
     """Main funciton"""
@@ -203,7 +208,7 @@ def main():
 
     if args.defs:
         out_defs = "  ".join(pkg.macro_defs)
-        print("  "+out_defs)
+        print("  " + out_defs)
 
     if args.sources:
         print(" ".join(pkg.lib_source))
@@ -304,6 +309,7 @@ def main():
 
     if args.export_tcl:
         gen_tcl_vivado(pkg, args.export_tcl)
+
 
 if __name__ == "__main__":
     main()

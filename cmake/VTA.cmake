@@ -123,9 +123,13 @@ elseif(PYTHON)
     if(APPLE)
       set_property(TARGET vta_fsim APPEND PROPERTY LINK_FLAGS "-undefined dynamic_lookup")
     endif(APPLE)
-    target_link_libraries(vta_tsim
-            D:/workspace/project/nn_compiler/tvm/cmake-build-debug-mingw_x86_64/libtvm.dll.a
-            )
+
+    if (IS_WINDOWS)
+      target_link_libraries(vta_tsim
+              D:/workspace/project/nn_compiler/tvm/cmake-build-debug-mingw_x86_64/libtvm.dll.a
+              )
+    endif ()
+
   endif()
 
   # VTA FPGA driver sources

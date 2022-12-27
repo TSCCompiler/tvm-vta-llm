@@ -158,6 +158,7 @@ elif env.TARGET in ("sim", "tsim", "intelfocl"):
         # program intelfocl aocx
         vta.program_fpga(remote, bitstream="vta.bitstream")
 
+
 @tvm._ffi.register_func("tvm.rpc.server.load_module", override=True)
 def load_module(file_name):
     args = str(file_name).split(';')
@@ -414,8 +415,8 @@ remote.upload(os.path.join(temp, "vadd.o"))
 # ~~~~~~~~~~~~~~~~~~
 # We can load the compiled module from the file system to run the code.
 
-f = remote.load_module(os.path.join(temp, "vadd.o")+";D:/workspace/project/nn_compiler/vta-hw/cmake-build-debug-mingw_x86_64/libvta_tsim.dll.a.lib")
-# f = remote.load_module("vadd.so")
+# f = remote.load_module(os.path.join(temp, "vadd.o")+";D:/workspace/project/nn_compiler/vta-hw/cmake-build-debug-mingw_x86_64/libvta_tsim.dll.a.lib")
+f = remote.load_module(os.path.join(temp, "vadd.o"))
 
 env = vta.get_env()
 # clang -O2 -shared -o C:\Users\sunhh\AppData\Local\Temp\tmp32i7q4sa\vadd.o.so C:\Users\sunhh\AppData\Local\Temp\tmp32i7q4sa\vadd.o

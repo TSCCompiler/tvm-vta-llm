@@ -192,7 +192,7 @@ def tbias(lanes):
 
 def test_add():
     """add tests."""
-    tadd(4)
+    tadd(1)
     # tadd(2)
 
 
