@@ -182,6 +182,8 @@ class PkgConfig(object):
         else:
             # By default, we use the pynq parameters
             self.fpga_device = "xc7z100ffg900-2"
+            if "FPGA_DEVICE" in cfg.keys():
+                self.fpga_device = cfg["FPGA_DEVICE"]
             self.fpga_family = "zynq-7000"
             self.fpga_board = None
             self.fpga_board_rev = None

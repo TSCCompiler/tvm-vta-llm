@@ -35,9 +35,6 @@ on VTA with the TVM workflow.
 from __future__ import absolute_import, print_function
 
 import os
-os.environ["PATH"]="C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin\\amd64;D:\\Halide\llvm-install-rel\\bin;" \
-                   "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.0\\bin;"+os.environ["PATH"]
-print(os.environ["PATH"])
 import tvm
 import tvm.relay
 from tvm import te
@@ -212,7 +209,7 @@ C_buf = te.compute(
     lambda bo, co, bi, ci: te.sum(
         A_buf[bo, ko, bi, ki].astype(env.acc_dtype) * B_buf[co, ko, ci, ki].astype(env.acc_dtype),
         axis=[ko, ki],
-    ),
+        ),
     name="C_buf",
 )
 
@@ -391,21 +388,18 @@ print(vta.lower(s, [A, B, C], simple_mode=True))
 
 # Build GEMM VTA kernel
 my_gemm = vta.build(
-    s, [A, B, C], tvm.target.Target("llvm", host=env.target_host), name="my_gemm"
+    s, [A, B, C], tvm.target.Target("ext_dev", host=env.target_host), name="my_gemm"
 )
-
-# cpp_src = my_gemm.get_source("c++")
-# print(cpp_src)
 
 # Write the compiled module into an object file.
 temp = utils.tempdir()
-my_gemm.save(temp.relpath("gemm.cpp"))
+my_gemm.save(temp.relpath("gemm.o"))
 
 # Send the executable over RPC
-remote.upload(temp.relpath("gemm.cpp"))
+remote.upload(temp.relpath("gemm.o"))
 
 # Load the compiled module
-f = remote.load_module("gemm.cpp")
+f = remote.load_module("gemm.o")
 
 ######################################################################
 # Running the Function

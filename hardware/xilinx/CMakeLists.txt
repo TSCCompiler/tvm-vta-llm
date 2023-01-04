@@ -92,7 +92,10 @@ add_custom_command(
         DEPENDS ${tcl}
 )
 add_custom_target(ip
-        DEPENDS ${IP_PATH})
+        DEPENDS
+        ${IP_PATH}
+        ip_build_dir
+        )
 
 add_custom_command(
         OUTPUT ${BIT_PATH}

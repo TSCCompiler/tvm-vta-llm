@@ -1079,6 +1079,17 @@ class CommandQueue {
                     uint32_t x_pad_after, uint32_t y_pad_after, uint32_t dst_sram_index,
                     uint32_t dst_memory_type) {
 //      printf("begin to create mem insn\n");
+    LOG(INFO) << "LoadBuffer2D src_dram_addr : " << (uint64_t)(src_dram_addr);
+    LOG(INFO) << "             src_elem_offset : " << src_elem_offset <<"\n"
+              << "             x_size : " << x_size <<"\n"
+              << "             y_size : " << y_size << "\n"
+              << "             x_stride : " << x_stride<<"\n"
+              << "             x_pad_before : " << x_pad_before<<"\n"
+              << "             y_pad_before : " << y_pad_before<<"\n"
+              << "             x_pad_after : " << x_pad_after<<"\n"
+              << "             y_pad_after : " << y_pad_after<<"\n"
+              << "             dst_sram_index : " << dst_sram_index<<"\n"
+              << "             dst_memory_type : " << dst_memory_type;
     VTAMemInsn* insn = insn_queue_.CreateMemInsn(dst_memory_type);
 //    printf("after create mem insn\n");
     insn->opcode = VTA_OPCODE_LOAD;

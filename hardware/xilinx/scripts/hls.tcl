@@ -50,6 +50,8 @@ set ::wgt_reshape_factor    $WGT_MEM_AXI_RATIO
 set ::wgt_partition_factor  $WGT_MEM_BANKS
 set ::out_reshape_factor    $OUT_MEM_AXI_RATIO
 set ::out_partition_factor  $OUT_MEM_BANKS
+set ::core                  0.0.2
+set Revision                0.0.2
 
 
 # Initializes the HLS design and sets HLS pragmas for memory partitioning.
@@ -87,15 +89,15 @@ proc init_design {} {
 }
 
 # HLS behavioral sim
-open_project vta_sim
-set_top vta
-add_files $src_dir/vta.cc -cflags $cflags
-add_files -tb $sim_dir/vta_test.cc -cflags $cflags
-add_files -tb $test_dir/test_lib.cc -cflags $cflags
-open_solution "soln"
-init_design
-csim_design -clean
-close_project
+# open_project vta_sim
+# set_top vta
+# add_files $src_dir/vta.cc -cflags $cflags
+# add_files -tb $sim_dir/vta_test.cc -cflags $cflags
+# add_files -tb $test_dir/test_lib.cc -cflags $cflags
+# open_solution "soln"
+# init_design
+# csim_design -clean
+# close_project
 
 # Generate fetch stage
 open_project vta_fetch
@@ -104,7 +106,7 @@ add_files $src_dir/vta.cc -cflags $cflags
 open_solution "soln"
 init_design
 csynth_design
-export_design -format ip_catalog
+export_design -format ip_catalog -version "0.0.2"
 close_project
 
 # Generate load stage
@@ -114,7 +116,7 @@ add_files $src_dir/vta.cc -cflags $cflags
 open_solution "soln"
 init_design
 csynth_design
-export_design -format ip_catalog
+export_design -format ip_catalog -version "0.0.2"
 close_project
 
 # Generate compute stage
@@ -124,7 +126,7 @@ add_files $src_dir/vta.cc -cflags $cflags
 open_solution "soln"
 init_design
 csynth_design
-export_design -format ip_catalog
+export_design -format ip_catalog -version "0.0.2"
 close_project
 
 # Generate store stage
@@ -134,7 +136,7 @@ add_files $src_dir/vta.cc -cflags $cflags
 open_solution "soln"
 init_design
 csynth_design
-export_design -format ip_catalog
+export_design -format ip_catalog -version "0.0.2"
 close_project
 
 exit
