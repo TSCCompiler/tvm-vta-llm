@@ -51,7 +51,7 @@ set ::wgt_partition_factor  $WGT_MEM_BANKS
 set ::out_reshape_factor    $OUT_MEM_AXI_RATIO
 set ::out_partition_factor  $OUT_MEM_BANKS
 set ::core                  0.0.2
-set Revision                0.0.2
+set HWRevision                "1.0.0"
 
 
 # Initializes the HLS design and sets HLS pragmas for memory partitioning.
@@ -106,7 +106,7 @@ add_files $src_dir/vta.cc -cflags $cflags
 open_solution "soln"
 init_design
 csynth_design
-export_design -format ip_catalog -version "0.0.2"
+export_design -format ip_catalog -version $HWRevision
 close_project
 
 # Generate load stage
@@ -116,7 +116,7 @@ add_files $src_dir/vta.cc -cflags $cflags
 open_solution "soln"
 init_design
 csynth_design
-export_design -format ip_catalog -version "0.0.2"
+export_design -format ip_catalog -version $HWRevision
 close_project
 
 # Generate compute stage
@@ -126,7 +126,7 @@ add_files $src_dir/vta.cc -cflags $cflags
 open_solution "soln"
 init_design
 csynth_design
-export_design -format ip_catalog -version "0.0.2"
+export_design -format ip_catalog -version $HWRevision
 close_project
 
 # Generate store stage
@@ -136,7 +136,7 @@ add_files $src_dir/vta.cc -cflags $cflags
 open_solution "soln"
 init_design
 csynth_design
-export_design -format ip_catalog -version "0.0.2"
+export_design -format ip_catalog -version $HWRevision
 close_project
 
 exit
