@@ -52,8 +52,8 @@ from vta.testing import simulator
 env = vta.get_env()
 
 # We read the Pynq RPC host IP address and port number from the OS environment
-host = os.environ.get("VTA_RPC_HOST", "192.168.2.99")
-port = int(os.environ.get("VTA_RPC_PORT", "9091"))
+host = os.environ.get("VTA_RPC_HOST", "192.168.6.200")
+port = int(os.environ.get("VTA_RPC_PORT", "9092"))
 
 # We configure both the bitstream and the runtime system on the Pynq
 # to match the VTA configuration specified by the vta_config.json file.
@@ -64,12 +64,12 @@ if env.TARGET == "pynq":
     remote = rpc.connect(host, port)
 
     # Reconfigure the JIT runtime
-    vta.reconfig_runtime(remote)
+    # vta.reconfig_runtime(remote)
 
     # Program the FPGA with a pre-compiled VTA bitstream.
     # You can program the FPGA with your own custom bitstream
     # by passing the path to the bitstream file instead of None.
-    vta.program_fpga(remote, bitstream=None)
+    # vta.program_fpga(remote, bitstream=None)
 
 # In simulation mode, host the RPC server locally.
 elif env.TARGET in ["sim", "tsim"]:

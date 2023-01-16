@@ -42,8 +42,9 @@ def server_start():
     dll_path = find_libvta("libvta")[0]
     cfg_path = os.path.abspath(os.path.join(proj_root, "3rdparty/vta-hw/config/vta_config.json"))
     runtime_dll = []
+    logging.info("Getting old tvm.rpc.server.load_module")
     _load_module = tvm.get_global_func("tvm.rpc.server.load_module")
-
+    print(_load_module)
     def load_vta_dll():
         """Try to load vta dll"""
         if not runtime_dll:
