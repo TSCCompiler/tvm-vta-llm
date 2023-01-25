@@ -31,3 +31,9 @@ The key features of VTA include:
   - Direct optimization and deployment of models from deep learning frameworks via TVM.
   - Customized and extensible TVM compiler back-end.
   - Flexible RPC support to ease deployment, and program FPGAs with the convenience of Python.
+- Running on xilinx pynq
+  ```shell
+  su root
+  source /home/xilinx/.bashrc
+  python3 -m vta.exec.rpc_server --host 192.168.6.200 --port 9091 
+  ```

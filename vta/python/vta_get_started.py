@@ -132,7 +132,7 @@ def load_module_with_lib(path, fmt="", extlib=[]):
 
 # We read the Pynq RPC host IP address and port number from the OS environment
 host = os.environ.get("VTA_RPC_HOST", "192.168.6.200")
-port = int(os.environ.get("VTA_RPC_PORT", "9092"))
+port = int(os.environ.get("VTA_RPC_PORT", "9091"))
 
 # We configure both the bitstream and the runtime system on the Pynq
 # to match the VTA configuration specified by the vta_config.json file.
@@ -143,7 +143,7 @@ if env.TARGET == "pynq" or env.TARGET == "de10nano":
     remote = rpc.connect(host, port)
 
     # Reconfigure the JIT runtime
-    vta.reconfig_runtime(remote)
+    # vta.reconfig_runtime(remote)
 
     # Program the FPGA with a pre-compiled VTA bitstream.
     # You can program the FPGA with your own custom bitstream
