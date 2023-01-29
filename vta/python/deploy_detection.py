@@ -63,6 +63,7 @@ from tvm.contrib import graph_executor, utils
 from tvm.contrib.download import download_testdata
 from vta.testing import simulator
 from vta.top import graph_pack
+import cv2
 
 # Make sure that TVM was compiled with RPC=1
 assert tvm.runtime.enabled("rpc")
@@ -106,9 +107,10 @@ else:
 coco_path = download_testdata(
     REPO_URL + "data/" + "coco.names" + "?raw=true", "coco.names", module="data"
 )
-font_path = download_testdata(
-    REPO_URL + "data/" + "arial.ttf" + "?raw=true", "arial.ttf", module="data"
-)
+# font_path = download_testdata(
+#     REPO_URL + "data/" + "arial.ttf" + "?raw=true", "arial.ttf", module="data"
+# )
+font_path = '/home/share/document/BT/ossim-dev/share/ossim/fonts/arial.ttf'
 with open(coco_path) as f:
     content = f.readlines()
 names = [x.strip() for x in content]
@@ -156,7 +158,7 @@ if env.TARGET not in ["sim", "tsim"]:
     # Otherwise if you have a device you want to program directly from
     # the host, make sure you've set the variables below to the IP of
     # your board.
-    device_host = os.environ.get("VTA_RPC_HOST", "192.168.2.99")
+    device_host = os.environ.get("VTA_RPC_HOST", "192.168.6.200")
     device_port = os.environ.get("VTA_RPC_PORT", "9091")
     if not tracker_host or not tracker_port:
         remote = rpc.connect(device_host, int(device_port))
@@ -168,8 +170,8 @@ if env.TARGET not in ["sim", "tsim"]:
     # You can program the FPGA with your own custom bitstream
     # by passing the path to the bitstream file instead of None.
     reconfig_start = time.time()
-    vta.reconfig_runtime(remote)
-    vta.program_fpga(remote, bitstream=None)
+    # vta.reconfig_runtime(remote)
+    # vta.program_fpga(remote, bitstream=None)
     reconfig_time = time.time() - reconfig_start
     print("Reconfigured FPGA and RPC runtime in {0:.2f}s!".format(reconfig_time))
 
@@ -265,8 +267,8 @@ img_path = download_testdata(img_url, test_image, "data")
 data = darknet.load_image(img_path, neth, netw).transpose(1, 2, 0)
 
 # Prepare test image for inference
-plt.imshow(data)
-plt.show()
+# plt.imshow(data)
+# plt.show()
 data = data.transpose((2, 0, 1))
 data = data[np.newaxis, :]
 data = np.repeat(data, env.BATCH, axis=0)
@@ -276,7 +278,7 @@ m.set_input("data", data)
 
 # Perform inference and gather execution statistics
 # More on: :py:method:`tvm.runtime.Module.time_evaluator`
-num = 4  # number of times we run module for a single measurement
+num = 40  # number of times we run module for a single measurement
 rep = 3  # number of measurements (we derive std dev from this)
 timer = m.module.time_evaluator("run", ctx, number=num, repeat=rep)
 
@@ -320,6 +322,12 @@ _, im_h, im_w = img.shape
 dets = yolo_detection.fill_network_boxes((netw, neth), (im_w, im_h), thresh, 1, tvm_out)
 last_layer = net.layers[net.n - 1]
 yolo_detection.do_nms_sort(dets, last_layer.classes, nms_thresh)
+print(dets)
 yolo_detection.draw_detections(font_path, img, dets, thresh, names, last_layer.classes)
-plt.imshow(img.transpose(1, 2, 0))
-plt.show()
+cvimg = img.transpose(1, 2, 0)
+cvimg = cvimg*255.0
+# npimg = cvimg.numpy()
+npimg = cvimg.astype(np.uint8)
+cv2.imwrite('test.jpg', npimg)
+# plt.imshow(img.transpose(1, 2, 0))
+# plt.show()

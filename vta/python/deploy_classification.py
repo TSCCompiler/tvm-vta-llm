@@ -47,9 +47,10 @@ from PIL import Image
 
 from mxnet.gluon.model_zoo import vision
 import numpy as np
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 
 import tvm
+import tvm.relay
 from tvm import te
 from tvm import rpc, autotvm, relay
 from tvm.contrib import graph_executor, utils, download
@@ -110,7 +111,7 @@ if env.TARGET not in ["sim", "tsim", "intelfocl"]:
     # Otherwise if you have a device you want to program directly from
     # the host, make sure you've set the variables below to the IP of
     # your board.
-    device_host = os.environ.get("VTA_RPC_HOST", "192.168.2.99")
+    device_host = os.environ.get("VTA_RPC_HOST", "192.168.6.200")
     device_port = os.environ.get("VTA_RPC_PORT", "9091")
     if not tracker_host or not tracker_port:
         remote = rpc.connect(device_host, int(device_port))
@@ -123,8 +124,8 @@ if env.TARGET not in ["sim", "tsim", "intelfocl"]:
     # You can program the FPGA with your own custom bitstream
     # by passing the path to the bitstream file instead of None.
     reconfig_start = time.time()
-    vta.reconfig_runtime(remote)
-    vta.program_fpga(remote, bitstream=None)
+    # vta.reconfig_runtime(remote)
+    # vta.program_fpga(remote, bitstream=None)
     reconfig_time = time.time() - reconfig_start
     print("Reconfigured FPGA and RPC runtime in {0:.2f}s!".format(reconfig_time))
 
@@ -250,8 +251,8 @@ download.download(image_url, image_fn)
 
 # Prepare test image for inference
 image = Image.open(image_fn).resize((224, 224))
-plt.imshow(image)
-plt.show()
+# plt.imshow(image)
+# plt.show()
 image = np.array(image) - np.array([123.0, 117.0, 104.0])
 image /= np.array([58.395, 57.12, 57.375])
 image = image.transpose((2, 0, 1))
