@@ -41,6 +41,9 @@ tensorization in the core) to massage the compute graph for the hardware target.
 from __future__ import absolute_import, print_function
 
 import argparse, json, os, requests, sys, time
+os.environ["PATH"]="D:\\workspace\\project\\nn_compiler\\tvm\\cmake-build-release_mingw;C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin\\amd64;D:\\Halide\llvm-install-rel\\bin;" \
+                   "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.0\\bin;"+os.environ["PATH"]
+# print(os.environ["PATH"])
 from io import BytesIO
 from os.path import join, isfile
 from PIL import Image
@@ -56,6 +59,7 @@ from tvm import rpc, autotvm, relay
 from tvm.contrib import graph_executor, utils, download
 from tvm.contrib.debugger import debug_executor
 from tvm.relay import transform
+from tvm.runtime.module import _ffi_api
 
 import vta
 from vta.testing import simulator
@@ -64,6 +68,81 @@ from vta.top import graph_pack
 
 # Make sure that TVM was compiled with RPC=1
 assert tvm.runtime.enabled("rpc")
+
+def load_module_with_lib(path, fmt="", extlib=[]):
+    """Load module from file.
+
+    Parameters
+    ----------
+    path : str
+        The path to the module file.
+
+    fmt : str, optional
+        The format of the file, if not specified
+        it will be inferred from suffix of the file.
+
+    Returns
+    -------
+    module : runtime.Module
+        The loaded module
+
+    Note
+    ----
+    This function will automatically call
+    cc.create_shared if the path is in format .o or .tar
+    """
+    if os.path.isfile(path):
+        path = os.path.realpath(path)
+    else:
+        raise ValueError("cannot find file %s" % path)
+
+    # n_options = []
+    # for opt in extlib:
+    #     n_options.append("l"+opt)
+    n_options = ["-l"+opt for opt in extlib]
+
+    # High level handling for .o and .tar file.
+    # We support this to be consistent with RPC module load.
+    if path.endswith(".o"):
+        # Extra dependencies during runtime.
+        from tvm.contrib import cc as _cc
+
+        _cc.create_shared(path + ".so", path, options=n_options)
+        path += ".so"
+    elif path.endswith(".tar"):
+        # Extra dependencies during runtime.
+        from tvm.contrib import cc as _cc, utils as _utils, tar as _tar
+
+        tar_temp = _utils.tempdir(custom_path=path.replace(".tar", ""))
+        _tar.untar(path, tar_temp.temp_dir)
+        files = [tar_temp.relpath(x) for x in tar_temp.listdir()]
+        _cc.create_shared(path + ".so", files)
+        path += ".so"
+    # Redirect to the load API
+    return _ffi_api.ModuleLoadFromFile(path, fmt)
+
+
+@tvm._ffi.register_func("tvm.rpc.server.load_module", override=True)
+def load_module(file_name):
+    args = str(file_name).split(';')
+    file_name = args[0]
+    ext_lib = args[1:]
+    """Load module from remote side."""
+    path = file_name
+    m = load_module_with_lib(path, extlib=ext_lib)
+    # logger.info("load_module %s", path)
+    return m
+
+# Download ImageNet categories
+categ_url = "https://github.com/uwsampl/web-data/raw/main/vta/models/"
+categ_fn = "synset.txt"
+download.download(join(categ_url, categ_fn), categ_fn)
+synset = eval(open(categ_fn).read())
+
+# Download test image
+image_url = "https://homes.cs.washington.edu/~moreau/media/vta/cat.jpg"
+image_fn = "cat.png"
+download.download(image_url, image_fn)
 
 ######################################################################
 # Define the platform and model targets
