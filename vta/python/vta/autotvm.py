@@ -47,6 +47,6 @@ def module_loader(bitstream=None):
             Artifact from the build phase, unused here.
         """
         rpc_client.program_fpga(remote, bitstream)
-        rpc_client.reconfig_runtime(remote)
+        # rpc_client.reconfig_runtime(remote)
 
     return default_module_loader(reprogram_fpga)
