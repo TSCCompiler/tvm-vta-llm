@@ -69,6 +69,7 @@ from tvm.autotvm.tuner import XGBTuner, GATuner, RandomTuner, GridSearchTuner
 import vta
 from vta.testing import simulator
 from vta.top import graph_pack
+from tvm.contrib.debugger import debug_executor
 
 #################################################################
 # Compile network
@@ -449,6 +450,9 @@ def tune_and_evaluate(tuning_opt):
             "Mean inference time (std dev): %.2f ms (%.2f ms)"
             % (np.mean(prof_res), np.std(prof_res))
         )
+        # profiler using debug
+        profiler = debug_executor.create(graph, lib, ctx)
+        profiler.run()
 
 
 # Run the tuning and evaluate the results
