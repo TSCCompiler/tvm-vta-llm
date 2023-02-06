@@ -258,12 +258,12 @@ with autotvm.tophub.context(target):
     lib = remote.load_module("graphlib.tar")
 
     # Graph executor
-    # m = graph_executor.GraphModule(lib["default"](ctx))
+    m = graph_executor.GraphModule(lib["default"](ctx))
     # m = graph_executor.create(graph, lib, ctx)
 
     # # profiler using debug
-    profiler = debug_executor.create(json_graph, lib, ctx)
-    profiler.run()
+    # profiler = debug_executor.create(json_graph, lib, ctx)
+    # profiler.run()
 
 exit(0)
 

@@ -28,15 +28,15 @@ import numpy as np
 import tvm
 from tvm.contrib import graph_executor, download
 
-
 CTX = tvm.ext_dev(0)
+
 
 def load_vta_library():
     """load vta lib"""
-    curr_path = os.path.dirname(
-        os.path.abspath(os.path.expanduser(__file__)))
-    proj_root = os.path.abspath(os.path.join(curr_path, "../../../../"))
-    vtadll = os.path.abspath(os.path.join(proj_root, "build/libvta.so"))
+    # curr_path = os.path.dirname(
+    #     os.path.abspath(os.path.expanduser(__file__)))
+    # proj_root = os.path.abspath(os.path.join(curr_path, "../../../../"))
+    vtadll = os.path.abspath(os.path.join("./", "build/libvta.so"))
     return tvm.runtime.load_module(vtadll)
 
 
@@ -58,23 +58,26 @@ def load_model():
     categ_url = "https://github.com/uwsampl/web-data/raw/main/vta/models/"
     categ_fn = "synset.txt"
     download.download(join(categ_url, categ_fn), categ_fn)
-    synset = eval(open(categ_fn).read())
+    # synset = eval(open(categ_fn).read())
+    synset = []
 
     return model, param_bytes, synset
+
 
 if __name__ == "__main__":
     MOD, PARAMS_BYTES, SYNSET = load_model()
 
-    IMAGE_URL = 'https://homes.cs.washington.edu/~moreau/media/vta/cat.jpg'
-    RESPONSE = requests.get(IMAGE_URL)
+    # IMAGE_URL = 'https://homes.cs.washington.edu/~moreau/media/vta/cat.jpg'
+    # RESPONSE = requests.get(IMAGE_URL)
+    # download.download('https://empty', "imagenet_cat.png")
 
     # Prepare test image for inference
-    IMAGE = Image.open(BytesIO(RESPONSE.content)).resize((224, 224))
-
+    # IMAGE = Image.open(BytesIO(RESPONSE.content)).resize((224, 224))
+    IMAGE = Image.open("./imagenet_cat.png").resize((224, 224))
     MOD.set_input('data', IMAGE)
     MOD.load_params(PARAMS_BYTES)
     MOD.run()
 
     TVM_OUTPUT = MOD.get_output(0, tvm.nd.empty((1, 1000), "float32", CTX))
     TOP_CATEGORIES = np.argsort(TVM_OUTPUT.asnumpy()[0])
-    print("\t#1:", SYNSET[TOP_CATEGORIES[-1]])
+    print("\t#1:", str(TOP_CATEGORIES[-1]))

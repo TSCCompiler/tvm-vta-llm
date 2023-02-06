@@ -17,10 +17,11 @@
 
 # Makefile Example to deploy TVM modules.
 TVM_ROOT=${TVM_HOME}
+TVM_VTA=${VTA_HOME}
 CUR_DIR=$(shell pwd)
 DMLC_CORE=${TVM_ROOT}/3rdparty/dmlc-core
 
-TARGET := ${shell python3 ../../config/vta_config.py --target}
+TARGET := pynq #${shell python3 ../../config/vta_config.py --target}
 
 
 VTA_LIB=vta
@@ -28,15 +29,17 @@ ifeq (${TARGET}, sim)
 	VTA_LIB=vta_fsim
 endif
 
-PKG_CFLAGS = -std=c++14 -O0 -g -fPIC\
+PKG_CFLAGS = -std=c++17 -O0 -g -fPIC\
 						 -I${TVM_ROOT}/include\
-						 -I${TVM_ROOT}/vta/include\
+						 -I${VTA_HOME}\
+						 -I${VTA_HOME}/include\
 						 -I${DMLC_CORE}/include\
 						 -I${TVM_ROOT}/3rdparty/dlpack/include\
-						 -I${TVM_ROOT}/3rdparty/vta-hw/include\
 						 -I${TVM_ROOT}/\
 
-PKG_LDFLAGS = -L${TVM_ROOT}/build  -L${CUR_DIR} -ldl -pthread -l${VTA_LIB} -ltvm_runtime
+
+
+PKG_LDFLAGS = -L${TVM_ROOT}/build  -L${CUR_DIR} -ldl -pthread -lvta -ltvm_runtime
 
 .PHONY: clean all
 
