@@ -18,8 +18,11 @@
 
 import sys
 from pynq import Bitstream
+from pynq import xlnk
 
 assert len(sys.argv) == 2, "usage: <bitstream path>"
 FILE = sys.argv[1]
+# Reset xilinx driver
+xlnk.Xlnk().xlnk_reset()
 BITSTREAM = Bitstream(FILE)
 BITSTREAM.download()

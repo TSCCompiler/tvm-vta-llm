@@ -172,7 +172,7 @@ if env.TARGET not in ["sim", "tsim"]:
     # by passing the path to the bitstream file instead of None.
     reconfig_start = time.time()
     # vta.reconfig_runtime(remote)
-    vta.program_fpga(remote, bitstream="/home/share/data/workspace/project/fpga/hls/vta-hw/build/vta.bit")
+    # vta.program_fpga(remote, bitstream="/home/share/data/workspace/project/fpga/hls/vta-hw/build/vta.bit")
     reconfig_time = time.time() - reconfig_start
     print("Reconfigured FPGA and RPC runtime in {0:.2f}s!".format(reconfig_time))
 
@@ -265,7 +265,7 @@ with autotvm.tophub.context(target):
     # profiler = debug_executor.create(json_graph, lib, ctx)
     # profiler.run()
 
-exit(0)
+# exit(0)
 
 ####################################
 # Perform image detection inference.
