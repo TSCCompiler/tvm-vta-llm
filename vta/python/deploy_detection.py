@@ -257,15 +257,15 @@ with autotvm.tophub.context(target):
     remote.upload(temp.relpath("graphlib.tar"))
     lib = remote.load_module("graphlib.tar")
 
-    # Graph executor
-    m = graph_executor.GraphModule(lib["default"](ctx))
-    # m = graph_executor.create(graph, lib, ctx)
+    # # Graph executor
+    # m = graph_executor.GraphModule(lib["default"](ctx))
+    # # m = graph_executor.create(graph, lib, ctx)
 
-    # # profiler using debug
-    # profiler = debug_executor.create(json_graph, lib, ctx)
-    # profiler.run()
+    # profiler using debug
+    profiler = debug_executor.create(json_graph, lib, ctx)
+    profiler.run()
 
-# exit(0)
+exit(0)
 
 ####################################
 # Perform image detection inference.
