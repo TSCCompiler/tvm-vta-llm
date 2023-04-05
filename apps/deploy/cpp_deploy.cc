@@ -62,10 +62,17 @@ void graph_test(std::string img,
   int dtype_lanes = 1;
   int device_type = kDLExtDev;
   int device_id = 0;
+  std::cout << "begin to get create\n";
+  auto* func_addr = tvm::runtime::Registry::Get("tvm.graph_runtime.create");
+  if(!func_addr){
+      std::cerr << "failed to get\n";
+  }else{
+      std::cerr << "got create func\n";
+  }
 
   // get global function module for graph runtime
   tvm::runtime::Module mod = 
-    (*tvm::runtime::Registry::Get("tvm.graph_runtime.create"))(json_data,
+    (*tvm::runtime::Registry::Get("tvm.graph_executor.create"))(json_data,
                                                                 mod_dylib,
                                                                 device_type,
                                                                 device_id);
@@ -83,11 +90,14 @@ void graph_test(std::string img,
   data_fin.read(data, data_len);
   TVMArrayCopyFromBytes(x, data, data_len);
   free(data);
+  std::cout << "got data \n";
   // get the function from the module(load parameters)
   tvm::runtime::PackedFunc load_params = mod.GetFunction("load_params");
   load_params(params_arr);
   tvm::runtime::PackedFunc run = mod.GetFunction("run");
+  std::cout << "got run\n";
   run();
+  std::cout << "after run\n";
 
   DLTensor* y;
   int out_ndim = 2;

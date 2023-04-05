@@ -63,6 +63,7 @@ from tvm.contrib import graph_executor, utils
 from tvm.contrib.download import download_testdata
 from vta.testing import simulator
 from vta.top import graph_pack
+from tvm.contrib.debugger import debug_executor
 import cv2
 
 # Make sure that TVM was compiled with RPC=1
@@ -171,7 +172,7 @@ if env.TARGET not in ["sim", "tsim"]:
     # by passing the path to the bitstream file instead of None.
     reconfig_start = time.time()
     # vta.reconfig_runtime(remote)
-    # vta.program_fpga(remote, bitstream=None)
+    # vta.program_fpga(remote, bitstream="/home/share/data/workspace/project/fpga/hls/vta-hw/build/vta.bit")
     reconfig_time = time.time() - reconfig_start
     print("Reconfigured FPGA and RPC runtime in {0:.2f}s!".format(reconfig_time))
 
@@ -238,9 +239,13 @@ with autotvm.tophub.context(target):
 
     # Compile Relay program with AlterOpLayout disabled
     with vta.build_config(disabled_pass={"AlterOpLayout", "tir.CommonSubexprElimTIR"}):
+        # graph, lib, params = relay.build(
+        #     mod, target=tvm.target.Target(target, host=env.target_host), params=params
+        # )
         lib = relay.build(
             mod, target=tvm.target.Target(target, host=env.target_host), params=params
         )
+    json_graph = lib.get_executor_config()
 
     # Measure Relay build time
     build_time = time.time() - build_start
@@ -252,8 +257,15 @@ with autotvm.tophub.context(target):
     remote.upload(temp.relpath("graphlib.tar"))
     lib = remote.load_module("graphlib.tar")
 
-    # Graph executor
-    m = graph_executor.GraphModule(lib["default"](ctx))
+    # # Graph executor
+    # m = graph_executor.GraphModule(lib["default"](ctx))
+    # # m = graph_executor.create(graph, lib, ctx)
+
+    # profiler using debug
+    profiler = debug_executor.create(json_graph, lib, ctx)
+    profiler.run()
+
+exit(0)
 
 ####################################
 # Perform image detection inference.
@@ -278,7 +290,7 @@ m.set_input("data", data)
 
 # Perform inference and gather execution statistics
 # More on: :py:method:`tvm.runtime.Module.time_evaluator`
-num = 40  # number of times we run module for a single measurement
+num = 4  # number of times we run module for a single measurement
 rep = 3  # number of measurements (we derive std dev from this)
 timer = m.module.time_evaluator("run", ctx, number=num, repeat=rep)
 

@@ -69,6 +69,7 @@ from tvm.autotvm.tuner import XGBTuner, GATuner, RandomTuner, GridSearchTuner
 import vta
 from vta.testing import simulator
 from vta.top import graph_pack
+from tvm.contrib.debugger import debug_executor
 
 #################################################################
 # Compile network
@@ -215,7 +216,7 @@ tuning_option = {
             port=tracker_port,
             number=5,
             timeout=60,
-            module_loader=vta.module_loader(),
+            module_loader=vta.module_loader("/home/share/data/workspace/project/fpga/hls/vta-hw/build/vta.bit"),
             # check_correctness=True, # TODO: re-enable when check_correctness works again.
         ),
     ),
@@ -390,21 +391,21 @@ def tune_and_evaluate(tuning_opt):
 
     # We do not run the tuning in our webpage server since it takes too long.
     # Comment the following line to run it by yourself.
-    return
+    # return
 
     # run tuning tasks
     print("Tuning...")
-    tune_tasks(tasks, **tuning_opt)
+    # tune_tasks(tasks, **tuning_opt)
 
     # evaluate with tuning history
     if env.TARGET != "sim":
         # Get remote from fleet node
         remote = autotvm.measure.request_remote(
-            env.TARGET, tracker_host, tracker_port, timeout=10000
+            "vta", tracker_host, tracker_port, timeout=10000
         )
         # Reconfigure the JIT runtime and FPGA.
-        vta.reconfig_runtime(remote)
-        vta.program_fpga(remote, bitstream=None)
+        # vta.reconfig_runtime(remote)
+        vta.program_fpga(remote, bitstream="/home/share/data/workspace/project/fpga/hls/vta-hw/build/vta.bit")
     else:
         # In simulation mode, host the RPC server locally.
         remote = rpc.LocalSession()
@@ -415,12 +416,12 @@ def tune_and_evaluate(tuning_opt):
         print("Compile...")
         if target.device_name != "vta":
             with tvm.transform.PassContext(opt_level=3, disabled_pass={"AlterOpLayout"}):
-                lib = relay.build(
+                graph, lib, params = relay.build(
                     relay_prog, target=target, params=params, target_host=env.target_host
                 )
         else:
-            with vta.build_config(opt_level=3, disabled_pass={"AlterOpLayout"}):
-                lib = relay.build(
+            with vta.build_config(opt_level=3, disabled_pass={"AlterOpLayout", "tir.CommonSubexprElimTIR"}):
+                graph, lib, params = relay.build(
                     relay_prog, target=target, params=params, target_host=env.target_host
                 )
 
@@ -433,7 +434,8 @@ def tune_and_evaluate(tuning_opt):
 
         # Generate the graph executor
         ctx = remote.ext_dev(0) if device == "vta" else remote.cpu(0)
-        m = graph_executor.GraphModule(lib["default"](ctx))
+        # m = graph_executor.GraphModule(lib["default"](ctx))
+        m = graph_executor.create(graph, lib, ctx)
 
         # upload parameters to device
         image = tvm.nd.array((np.random.uniform(size=(1, 3, 224, 224))).astype("float32"))
@@ -448,6 +450,9 @@ def tune_and_evaluate(tuning_opt):
             "Mean inference time (std dev): %.2f ms (%.2f ms)"
             % (np.mean(prof_res), np.std(prof_res))
         )
+        # profiler using debug
+        profiler = debug_executor.create(graph, lib, ctx)
+        profiler.run()
 
 
 # Run the tuning and evaluate the results

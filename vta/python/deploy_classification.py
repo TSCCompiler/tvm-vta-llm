@@ -236,7 +236,7 @@ ctx = remote.ext_dev(0) if device == "vta" else remote.cpu(0)
 #
 
 # Load pre-configured AutoTVM schedules
-with autotvm.tophub.context(target):
+with autotvm.tophub.context(target, extra_files=['./vta.resnet18_v1.log']):
 
     # Populate the shape and data type dictionary for ImageNet classifier input
     dtype_dict = {"data": "float32"}

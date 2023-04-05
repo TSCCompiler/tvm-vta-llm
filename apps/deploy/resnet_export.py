@@ -125,9 +125,10 @@ def compile_mxnet_gulon_resnet(_env, _model):
                 start_name=PACK_DICT[_model][0],
                 stop_name=PACK_DICT[_model][1])
 
-    # Compile Relay program with AlterOpLayout disabled
-    with relay.build_config(opt_level=3, disabled_pass={"AlterOpLayout"}):
-        with vta.build_config(debug_flag=0):
+        # Compile Relay program with AlterOpLayout disabled
+    # with autotvm.tophub.context(_env.target):
+        with vta.build_config(disabled_pass={"AlterOpLayout", "tir.CommonSubexprElimTIR"}):
+            print('with disable common sub expr')
             graph, lib, params = relay.build(
                 relay_prog, target=_env.target,
                 params=params, target_host=_env.target_host)
