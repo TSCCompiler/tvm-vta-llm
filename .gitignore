@@ -235,3 +235,6 @@ conda/pkg
 *.tokens
 *.interp
 tvm/
+/apps/tsim_example/hardware/chisel/.idea/
+/apps/tsim_example/hardware/chisel/project.bak/
+/apps/tsim_example/hardware/chisel/build.bak
