@@ -110,7 +110,7 @@
           </args>
           <launchers>
             <launcher>
-              <id>defaultXilinx</id>
+              <id>defaultXilinxSimple</id>
               <mainClass>vta.DefaultPynqConfig</mainClass>
               <!-- args are optional -->
               <args>
@@ -123,6 +123,22 @@
               </jvmArgs>
             </launcher>
             <!-- you could define other launcher -->
+            <launcher>
+              <id>TestXilinx</id>
+              <mainClass>vta.TestDefaultPynqConfig</mainClass>
+              <!-- args are optional -->
+              <args>
+                <arg>--target-dir</arg>
+                <arg>D:/workspace/project/nn_compiler/vta-hw/cmake-build-release-mingw_x86_64/chisel</arg>
+                <arg>-o</arg>
+                <arg>Test.DefaultPynqConfig</arg>
+              </args>
+              <!-- jvmArgs are optional -->
+              <jvmArgs>
+                <jvmArg>-Xmx128m</jvmArg>
+                <jvmArg>-Djava.library.path=./target/classes</jvmArg>
+              </jvmArgs>
+            </launcher>
           </launchers>
         </configuration>
       </plugin>

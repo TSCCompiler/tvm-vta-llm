@@ -87,7 +87,8 @@ elseif(PYTHON)
     endif(APPLE)
     target_compile_definitions(vta_fsim PUBLIC USE_FSIM_TLPP)
     target_link_libraries(vta_fsim
-            D:/workspace/project/nn_compiler/tvm/cmake-build-debug-mingw_x86_64/libtvm.dll.a
+#            D:/workspace/project/nn_compiler/tvm/cmake-build-debug-mingw_x86_64/libtvm.dll.a
+            D:/workspace/project/nn_compiler/tvm/cmake-build-release_mingw/libtvm.dll.a
             )
   endif()
 
@@ -126,7 +127,8 @@ elseif(PYTHON)
 
     if (IS_WINDOWS)
       target_link_libraries(vta_tsim
-              D:/workspace/project/nn_compiler/tvm/cmake-build-debug-mingw_x86_64/libtvm.dll.a
+#              D:/workspace/project/nn_compiler/tvm/cmake-build-debug-mingw_x86_64/libtvm.dll.a
+              D:/workspace/project/nn_compiler/tvm/cmake-build-release_mingw/libtvm.dll.a
               )
     endif ()
 

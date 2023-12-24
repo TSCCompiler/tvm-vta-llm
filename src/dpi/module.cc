@@ -281,8 +281,9 @@ class DPIModule final : public DPIModuleNode {
     return "vta-tsim";
   }
 
+  //const String& name, const ObjectPtr<Object>& sptr_to_self
   PackedFunc GetFunction(
-      const std::string& name,
+      const String& name,
       const ObjectPtr<Object>& sptr_to_self) final {
     if (name == "WriteReg") {
       return TypedPackedFunc<void(int, int)>(

@@ -20,7 +20,7 @@ import os
 os.environ["PATH"]="D:\\workspace\\project\\nn_compiler\\tvm\\cmake-build-release_mingw;" \
                    "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin\\amd64;" \
                    "D:\\Halide\\llvm-install-rel\\bin;" \
-                   "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.0\\bin;"+os.environ["PATH"]
+                   "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.8\\bin;"+os.environ["PATH"]
 
 import numpy as np
 
