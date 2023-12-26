@@ -71,3 +71,6 @@ test:add vector-lanes:1 number of cycles:0
 
 Process finished with exit code 0
 ```
+生成的波形是wave.vcd文件，该文件可以使用gtkwave进行可视化，如下图
+
+![](imgs/gtkwave.png)

@@ -36,10 +36,9 @@ from __future__ import absolute_import, print_function
 
 import os
 import os
-os.environ["PATH"]="D:\\workspace\\project\\nn_compiler\\tvm\\cmake-build-release_mingw;" \
-                   "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin\\amd64;" \
-                   "D:\\Halide\\llvm-install-rel\\bin;" \
-                   "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.8\\bin;"+os.environ["PATH"]
+os.environ[
+    "PATH"] = "D:\\workspace\\project\\nn_compiler\\tvm\\cmake-build-release_mingw;C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin\\amd64;D:\\Halide\llvm-install-rel\\bin;" \
+              "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.0\\bin;" + os.environ["PATH"]
 import tvm
 import tvm.relay
 from tvm import te
@@ -48,6 +47,7 @@ import numpy as np
 from tvm import rpc
 from tvm.contrib import utils
 from vta.testing import simulator
+from vta.testing.simulator import load_module_with_lib, load_module_sim
 
 # Load VTA parameters from the 3rdparty/vta-hw/config/vta_config.json file
 env = vta.get_env()
@@ -76,6 +76,11 @@ if env.TARGET == "pynq" or env.TARGET == "de10nano":
 # In simulation mode, host the RPC server locally.
 elif env.TARGET in ["sim", "tsim"]:
     remote = rpc.LocalSession()
+
+
+    @tvm._ffi.register_func("tvm.rpc.server.load_module", override=True)
+    def load_module(file_name):
+        return load_module_sim(file_name)
 
 ######################################################################
 # Computation Declaration
@@ -215,7 +220,7 @@ C_buf = te.compute(
     lambda bo, co, bi, ci: te.sum(
         A_buf[bo, ko, bi, ki].astype(env.acc_dtype) * B_buf[co, ko, ci, ki].astype(env.acc_dtype),
         axis=[ko, ki],
-        ),
+    ),
     name="C_buf",
 )
 
@@ -398,14 +403,21 @@ my_gemm = vta.build(
 )
 
 # Write the compiled module into an object file.
-temp = utils.tempdir()
-my_gemm.save(temp.relpath("gemm.o"))
 
-# Send the executable over RPC
-remote.upload(temp.relpath("gemm.o"))
+temp = "./"
+my_gemm.save(os.path.join(temp, "gemm.o"))
+
+remote.upload(os.path.join(temp, "gemm.o"))
+
+
+# temp = utils.tempdir()
+# my_gemm.save(temp.relpath("gemm.o"))
+#
+# # Send the executable over RPC
+# remote.upload(temp.relpath("gemm.o"))
 
 # Load the compiled module
-f = remote.load_module("gemm.o")
+f = remote.load_module(os.path.join(temp, "gemm.o"))
 
 ######################################################################
 # Running the Function
