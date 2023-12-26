@@ -15,12 +15,95 @@
 # specific language governing permissions and limitations
 # under the License.
 """Utilities to start simulator."""
+import os
 import ctypes
 import json
 import warnings
 import tvm
+import tvm._ffi
 from ..environment import get_env
 from ..libinfo import find_libvta
+from tvm.runtime.module import _ffi_api
+
+
+def load_module_with_lib(path, fmt="", extlib=[]):
+    """Load module from file.
+
+    Parameters
+    ----------
+    path : str
+        The path to the module file.
+
+    fmt : str, optional
+        The format of the file, if not specified
+        it will be inferred from suffix of the file.
+
+    Returns
+    -------
+    module : runtime.Module
+        The loaded module
+
+    Note
+    ----
+    This function will automatically call
+    cc.create_shared if the path is in format .o or .tar
+    """
+    if os.path.isfile(path):
+        path = os.path.realpath(path)
+    else:
+        raise ValueError("cannot find file %s" % path)
+
+    # n_options = []
+    # for opt in extlib:
+    #     n_options.append("l"+opt)
+    n_options = ["-l" + opt for opt in extlib]
+
+    # High level handling for .o and .tar file.
+    # We support this to be consistent with RPC module load.
+    if path.endswith(".o"):
+        # Extra dependencies during runtime.
+        from tvm.contrib import cc as _cc
+
+        _cc.create_shared(path + ".so", path, options=n_options)
+        path += ".so"
+    elif path.endswith(".tar"):
+        # Extra dependencies during runtime.
+        from tvm.contrib import cc as _cc, utils as _utils, tar as _tar
+
+        tar_temp = _utils.tempdir(custom_path=path.replace(".tar", ""))
+        _tar.untar(path, tar_temp.temp_dir)
+        files = [tar_temp.relpath(x) for x in tar_temp.listdir()]
+        _cc.create_shared(path + ".so", files, options=n_options)
+        path += ".so"
+    # Redirect to the load API
+    return _ffi_api.ModuleLoadFromFile(path, fmt)
+
+
+def load_module_sim(file_name):
+    env = get_env()
+    require_sim = env.TARGET in ("sim", "tsim")
+
+    lib_driver_name = (
+        "libvta_tsim"
+        if env.TARGET == "tsim"
+        else "libvta"
+        if env.TARGET == "intelfocl"
+        else "libvta_fsim"
+    )
+    # args = str(file_name).split(';')
+    file_name = str(file_name)
+    ext_lib = []
+    # lib_driver = ""
+    if os.name == 'nt':
+        lib_driver = find_libvta(lib_driver_name, optional=(not require_sim))
+        lib_driver = lib_driver[0] + ".a.lib"
+        ext_lib.append(lib_driver)
+
+    """Load module from remote side."""
+    path = file_name
+    m = load_module_with_lib(path, extlib=ext_lib)
+    # logger.info("load_module %s", path)
+    return m
 
 
 def _load_sw():
@@ -50,6 +133,36 @@ def _load_sw():
             raise err
         warnings.warn("Error when loading VTA driver {}: {}".format(lib_driver[0], err))
         return []
+
+    # if os.name == 'nt':
+    #     @tvm._ffi.register_func("tvm.rpc.server.load_module", override=True)
+    #     def load_module(file_name):
+    #         env = get_env()
+    #         require_sim = env.TARGET in ("sim", "tsim")
+    #
+    #         lib_driver_name = (
+    #             "libvta_tsim"
+    #             if env.TARGET == "tsim"
+    #             else "libvta"
+    #             if env.TARGET == "intelfocl"
+    #             else "libvta_fsim"
+    #         )
+    #         # args = str(file_name).split(';')
+    #         file_name = str(file_name)
+    #         ext_lib = []
+    #         # lib_driver = ""
+    #         if os.name == 'nt':
+    #             lib_driver = find_libvta(lib_driver_name, optional=(not require_sim))
+    #             lib_driver = lib_driver[0] + ".a.lib"
+    #             ext_lib.append(lib_driver)
+    #
+    #
+    #         """Load module from remote side."""
+    #         path = file_name
+    #         m = load_module_with_lib(path, extlib=ext_lib)
+    #         # logger.info("load_module %s", path)
+    #         return m
+    #     print('override load_module')
 
     if env.TARGET == "tsim":
         lib_hw = find_libvta("libvta_hw", optional=True)
