@@ -35,8 +35,10 @@ extensions for TVM to target the VTA design.
 from __future__ import absolute_import, print_function
 
 import os
-os.environ["PATH"]="D:\\workspace\\project\\nn_compiler\\tvm\\cmake-build-release_mingw;C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin\\amd64;D:\\Halide\llvm-install-rel\\bin;" \
-                   "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.0\\bin;"+os.environ["PATH"]
+
+os.environ[
+    "PATH"] = "D:\\workspace\\project\\nn_compiler\\tvm\\cmake-build-release_mingw;C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin\\amd64;D:\\Halide\llvm-install-rel\\bin;" \
+              "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.0\\bin;" + os.environ["PATH"]
 # print(os.environ["PATH"])
 import tvm
 import tvm.relay
@@ -75,6 +77,7 @@ import tvm._ffi
 from tvm.runtime.module import _ffi_api
 from tvm.contrib import utils
 from vta.testing import simulator
+from vta.libinfo import find_libvta
 
 
 def load_module_with_lib(path, fmt="", extlib=[]):
@@ -107,7 +110,7 @@ def load_module_with_lib(path, fmt="", extlib=[]):
     # n_options = []
     # for opt in extlib:
     #     n_options.append("l"+opt)
-    n_options = ["-l"+opt for opt in extlib]
+    n_options = ["-l" + opt for opt in extlib]
 
     # High level handling for .o and .tar file.
     # We support this to be consistent with RPC module load.
@@ -124,7 +127,7 @@ def load_module_with_lib(path, fmt="", extlib=[]):
         tar_temp = _utils.tempdir(custom_path=path.replace(".tar", ""))
         _tar.untar(path, tar_temp.temp_dir)
         files = [tar_temp.relpath(x) for x in tar_temp.listdir()]
-        _cc.create_shared(path + ".so", files)
+        _cc.create_shared(path + ".so", files, options=n_options)
         path += ".so"
     # Redirect to the load API
     return _ffi_api.ModuleLoadFromFile(path, fmt)
@@ -169,6 +172,7 @@ def load_module(file_name):
     m = load_module_with_lib(path, extlib=ext_lib)
     # logger.info("load_module %s", path)
     return m
+
 
 ######################################################################
 # Computation Declaration
@@ -414,9 +418,23 @@ remote.upload(os.path.join(temp, "vadd.o"))
 # Loading the Module
 # ~~~~~~~~~~~~~~~~~~
 # We can load the compiled module from the file system to run the code.
+require_sim = env.TARGET in ("sim", "tsim")
 
-# f = remote.load_module(os.path.join(temp, "vadd.o")+";D:/workspace/project/nn_compiler/vta-hw/cmake-build-debug-mingw_x86_64/libvta_tsim.dll.a.lib")
-f = remote.load_module(os.path.join(temp, "vadd.o"))
+lib_driver_name = (
+    "libvta_tsim"
+    if env.TARGET == "tsim"
+    else "libvta"
+    if env.TARGET == "intelfocl"
+    else "libvta_fsim"
+)
+lib_driver = ""
+if os.name == 'nt':
+    lib_driver = find_libvta(lib_driver_name, optional=(not require_sim))
+    lib_driver = ";" + lib_driver[0] + ".a.lib"
+# f = remote.load_module(os.path.join(temp, "vadd.o")+";D:/workspace/project/nn_compiler/vta-hw/cmake-build-release-mingw_x86_64/libvta_tsim.dll.a.lib")
+# f = remote.load_module(os.path.join(temp, "vadd.o")+";D:/workspace/project/nn_compiler/vta-hw/cmake-build-release-mingw_x86_64/libvta_fsim.dll.a.lib")
+f = remote.load_module(os.path.join(temp, "vadd.o") + lib_driver)
+# f = remote.load_module(os.path.join(temp, "vadd.o"))
 
 env = vta.get_env()
 # clang -O2 -shared -o C:\Users\sunhh\AppData\Local\Temp\tmp32i7q4sa\vadd.o.so C:\Users\sunhh\AppData\Local\Temp\tmp32i7q4sa\vadd.o
@@ -453,6 +471,8 @@ A_nd = tvm.nd.array(A_packed, ctx)
 B_nd = tvm.nd.array(B_packed, ctx)
 C_nd = tvm.nd.array(np.zeros((o, m, env.BATCH, env.BLOCK_OUT)).astype(C.dtype), ctx)
 
+if env.TARGET in ["sim", "tsim"]:
+    simulator.clear_stats()
 # Invoke the module to perform the computation
 f(A_nd, B_nd, C_nd)
 print("finish compute")
@@ -467,6 +487,13 @@ print("finish compute")
 C_ref = (A_orig.astype(env.acc_dtype) + B_orig.astype(env.acc_dtype)).astype(C.dtype)
 C_ref = C_ref.reshape(o, env.BATCH, m, env.BLOCK_OUT).transpose((0, 2, 1, 3))
 np.testing.assert_equal(C_ref, C_nd.numpy())
+
+# Print stats
+if env.TARGET in ["sim", "tsim"]:
+    sim_stats = simulator.stats()
+    print("Execution statistics:")
+    for k, v in sim_stats.items():
+        print("\t{:<16}: {:>16}".format(k, v))
 print("Successful vector add test!")
 
 ######################################################################

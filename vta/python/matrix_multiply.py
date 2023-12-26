@@ -35,6 +35,11 @@ on VTA with the TVM workflow.
 from __future__ import absolute_import, print_function
 
 import os
+import os
+os.environ["PATH"]="D:\\workspace\\project\\nn_compiler\\tvm\\cmake-build-release_mingw;" \
+                   "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin\\amd64;" \
+                   "D:\\Halide\\llvm-install-rel\\bin;" \
+                   "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.8\\bin;"+os.environ["PATH"]
 import tvm
 import tvm.relay
 from tvm import te
@@ -50,6 +55,7 @@ env = vta.get_env()
 # We read the Pynq RPC host IP address and port number from the OS environment
 host = os.environ.get("VTA_RPC_HOST", "192.168.6.200")
 port = int(os.environ.get("VTA_RPC_PORT", "9091"))
+env.TARGET = 'tsim'
 
 # We configure both the bitstream and the runtime system on the Pynq
 # to match the VTA configuration specified by the vta_config.json file.
