@@ -1079,8 +1079,8 @@ class CommandQueue {
                     uint32_t x_pad_after, uint32_t y_pad_after, uint32_t dst_sram_index,
                     uint32_t dst_memory_type) {
 //      printf("begin to create mem insn\n");
-    LOG(INFO) << "LoadBuffer2D src_dram_addr : " << (uint64_t)(src_dram_addr);
-    LOG(INFO) << "             src_elem_offset : " << src_elem_offset <<"\n"
+    DLOG(INFO) << "LoadBuffer2D src_dram_addr : " << (uint64_t)(src_dram_addr);
+    DLOG(INFO) << "             src_elem_offset : " << src_elem_offset <<"\n"
               << "             x_size : " << x_size <<"\n"
               << "             y_size : " << y_size << "\n"
               << "             x_stride : " << x_stride<<"\n"

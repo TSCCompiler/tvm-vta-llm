@@ -439,6 +439,8 @@ f = remote.load_module(os.path.join(temp, "gemm.o"))
 ctx = remote.ext_dev(0)
 
 # Initialize the A and B arrays randomly in the int range of (-128, 128]
+sizea = (o * env.BATCH, n * env.BLOCK_IN)
+size_b = (m * env.BLOCK_OUT, n * env.BLOCK_IN)
 A_orig = np.random.randint(-128, 128, size=(o * env.BATCH, n * env.BLOCK_IN)).astype(A.dtype)
 B_orig = np.random.randint(-128, 128, size=(m * env.BLOCK_OUT, n * env.BLOCK_IN)).astype(B.dtype)
 
