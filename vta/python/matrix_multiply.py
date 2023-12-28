@@ -55,7 +55,7 @@ env = vta.get_env()
 # We read the Pynq RPC host IP address and port number from the OS environment
 host = os.environ.get("VTA_RPC_HOST", "192.168.6.200")
 port = int(os.environ.get("VTA_RPC_PORT", "9091"))
-env.TARGET = 'tsim'
+# env.TARGET = 'tsim'
 
 # We configure both the bitstream and the runtime system on the Pynq
 # to match the VTA configuration specified by the vta_config.json file.
@@ -472,7 +472,7 @@ C_ref = C_ref.reshape(o, env.BATCH, m, env.BLOCK_OUT).transpose((0, 2, 1, 3))
 np.testing.assert_equal(C_ref, C_nd.numpy())
 
 # Print stats
-if env.TARGET in ["sim", "tsim"]:
+if env.TARGET in ["tsim"]:
     sim_stats = simulator.stats()
     print("Execution statistics:")
     for k, v in sim_stats.items():

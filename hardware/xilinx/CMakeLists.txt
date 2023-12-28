@@ -11,13 +11,13 @@ set(VTA_CONFIG "${VTA_HW_DIR}/config/vta_config.py")
 
 # OUTPUT_VARIABLE
 set(CONF "xc7z100ffg900-2_1x16_i8w8a32_15_15_18_17")
-execute_process(COMMAND python ${VTA_CONFIG} --cfg-str
+execute_process(COMMAND python3 ${VTA_CONFIG} --cfg-str
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         OUTPUT_VARIABLE CONF)
 string(STRIP ${CONF} CONF)
 message(STATUS "got conf ${CONF}")
 set(HLS_CFLAGS "")
-execute_process(COMMAND python ${VTA_CONFIG} --cflags
+execute_process(COMMAND python3 ${VTA_CONFIG} --cflags
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         OUTPUT_VARIABLE HLS_CFLAGS
         )
