@@ -10,4 +10,5 @@ add_subdirectory(hardware/xilinx)
 add_subdirectory(hardware/chisel)
 add_subdirectory(apps/verilator/add)
 add_subdirectory(apps/verilator/MAC)
+add_subdirectory(apps/deploy)
 
