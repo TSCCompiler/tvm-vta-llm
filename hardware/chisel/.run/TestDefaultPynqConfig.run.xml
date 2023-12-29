@@ -3,7 +3,7 @@
     <option name="ALTERNATIVE_JRE_PATH" value="C:/Program Files/Java/jdk1.8.0_202" />
     <option name="MAIN_CLASS_NAME" value="vta.TestDefaultPynqConfig" />
     <module name="vta" />
-    <option name="PROGRAM_PARAMETERS" value="--target-dir $PROJECT_DIR$/../../cmake-build-release-mingw_x86_64/chisel -o Test.DefaultPynqConfig" />
+    <option name="PROGRAM_PARAMETERS" value="--target-dir $PROJECT_DIR$/../../cmake-build-release/chisel -o Test.DefaultPynqConfig" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="vta.*" />

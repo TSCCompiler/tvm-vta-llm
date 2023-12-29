@@ -99,27 +99,27 @@ else(IS_WINDOWS)
             ${CHISEL_BUILD_DIR}/${TOP_TEST}.${HW_CONFIG}.v
             "--trace"
             )
-    add_custom_target(vta_gen_src_target
-            SOURCES
-            ${VERILATOR_BUILD_DIR}/V${TOP_TEST}.cpp
-            ${VERILATOR_BUILD_DIR}/V${TOP_TEST}__1.cpp
-            ${VERILATOR_BUILD_DIR}/V${TOP_TEST}__1__Slow.cpp
-            ${VERILATOR_BUILD_DIR}/V${TOP_TEST}__Dpi.cpp
-            ${VERILATOR_BUILD_DIR}/V${TOP_TEST}__Slow.cpp
-            ${VERILATOR_BUILD_DIR}/V${TOP_TEST}__Syms.cpp
-            ${VERILATOR_BUILD_DIR}/V${TOP_TEST}_DotProduct.cpp
-            ${VERILATOR_BUILD_DIR}/V${TOP_TEST}_DotProduct__Slow.cpp
-            ${VERILATOR_BUILD_DIR}/V${TOP_TEST}__Trace.cpp
-            ${VERILATOR_BUILD_DIR}/V${TOP_TEST}__Trace__1.cpp
-            ${VERILATOR_BUILD_DIR}/V${TOP_TEST}__Trace__Slow.cpp
-    )
-    add_custom_target(vta_v_file
-            SOURCES
-            ${CHISEL_BUILD_DIR}/${TOP_TEST}.${HW_CONFIG}.v
-    )
-    add_dependencies(vta_gen_src_target
-            vta_v_file
-    )
+#    add_custom_target(vta_gen_src_target
+#            SOURCES
+#            ${VERILATOR_BUILD_DIR}/V${TOP_TEST}.cpp
+#            ${VERILATOR_BUILD_DIR}/V${TOP_TEST}__1.cpp
+#            ${VERILATOR_BUILD_DIR}/V${TOP_TEST}__1__Slow.cpp
+#            ${VERILATOR_BUILD_DIR}/V${TOP_TEST}__Dpi.cpp
+#            ${VERILATOR_BUILD_DIR}/V${TOP_TEST}__Slow.cpp
+#            ${VERILATOR_BUILD_DIR}/V${TOP_TEST}__Syms.cpp
+#            ${VERILATOR_BUILD_DIR}/V${TOP_TEST}_DotProduct.cpp
+#            ${VERILATOR_BUILD_DIR}/V${TOP_TEST}_DotProduct__Slow.cpp
+#            ${VERILATOR_BUILD_DIR}/V${TOP_TEST}__Trace.cpp
+#            ${VERILATOR_BUILD_DIR}/V${TOP_TEST}__Trace__1.cpp
+#            ${VERILATOR_BUILD_DIR}/V${TOP_TEST}__Trace__Slow.cpp
+#    )
+#    add_custom_target(vta_v_file
+#            SOURCES
+#            ${CHISEL_BUILD_DIR}/${TOP_TEST}.${HW_CONFIG}.v
+#    )
+#    add_dependencies(vta_gen_src_target
+#            vta_v_file
+#    )
     add_library(vta_hw SHARED
             ${VERILATOR_BUILD_DIR}/V${TOP_TEST}.cpp
             ${VERILATOR_BUILD_DIR}/V${TOP_TEST}__1.cpp
@@ -137,9 +137,9 @@ else(IS_WINDOWS)
             ${VERILATOR_INC_DIR}/verilated_dpi.cpp
             ${VTA_HW_PATH}/hardware/dpi/tsim_device.cc
             )
-    add_dependencies(vta_hw
-            vta_gen_src_target
-    )
+#    add_dependencies(vta_hw
+#            vta_gen_src_target
+#    )
 
 
 endif (IS_WINDOWS)

@@ -145,7 +145,7 @@
               <!-- args are optional -->
               <args>
                 <arg>--target-dir</arg>
-                <arg>/mnt/workspace/project/nn_compiler/vta-hw/cmake-build-debug/chisel</arg>
+                <arg>/mnt/workspace/project/nn_compiler/vta-hw/cmake-build-release/chisel</arg>
                 <arg>-o</arg>
                 <arg>Test.DefaultPynqConfig</arg>
               </args>
