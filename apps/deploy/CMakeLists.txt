@@ -11,12 +11,13 @@ if (USE_VTA_FSIM)
             )
     target_include_directories(cpp_module_deploy_sim SYSTEM PUBLIC ${VTA_HW_PATH}/include)
     target_compile_definitions(cpp_module_deploy_sim PUBLIC DMLC_USE_LOGGING_LIBRARY=<tvm/runtime/logging.h>)
-    if (TVM_LIBRARY_PATH)
+    if (TVM_RUNTIME_LIBRARY_PATH)
         target_link_libraries(cpp_module_deploy_sim
                 #            D:/workspace/project/nn_compiler/tvm/cmake-build-debug-mingw_x86_64/libtvm.dll.a
                 #            D:/workspace/project/nn_compiler/tvm/cmake-build-release_mingw/libtvm.dll.a
-                ${TVM_LIBRARY_PATH}
-                vta_fsim
+                ${TVM_RUNTIME_LIBRARY_PATH}
+                ${CMAKE_DL_LIBS}
+#                vta_fsim
                 )
     endif ()
 endif ()
