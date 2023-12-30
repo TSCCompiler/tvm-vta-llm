@@ -25,13 +25,20 @@ void matrix_multiply(std::string model_path){
     int device_type = kDLExtDev;
     int device_id = 0;
     if (main_func== nullptr){
-        LOG(ERROR) << "Failed to get main ";
+        LOG(FATAL) << "Failed to get main ";
     }else{
         LOG(INFO) << "got main func";
     }
     tvm::Device _device(DLDevice{kDLExtDev, 0});
-    tvm::runtime::NDArray A_nd = tvm::runtime::NDArray::Empty({1,2}, tvm::DataType::Int(8),
+    tvm::runtime::NDArray A_nd = tvm::runtime::NDArray::Empty({1,16,1,16}, tvm::DataType::Int(8),
                                                               _device);
+    tvm::runtime::NDArray B_nd = tvm::runtime::NDArray::Empty({16,16,16,16}, tvm::DataType::Int(8),
+                                                              _device);
+    tvm::runtime::NDArray C_nd = tvm::runtime::NDArray::Empty({1,16,1,16}, tvm::DataType::Int(8),
+                                                              _device);
+    main_func(A_nd, B_nd, C_nd);
+
+
 }
 void* load_vta_driver(std::string vta_driver_dso){
     auto lib_handle_ = dlopen(vta_driver_dso.c_str(), RTLD_LAZY | RTLD_GLOBAL);
