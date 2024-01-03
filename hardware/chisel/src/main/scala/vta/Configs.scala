@@ -156,6 +156,7 @@ class GenericEval[T <: Module, P <: PeekPokeTester[T], C <: Parameters]
 
   val arguments = Array(
     "--backend-name", "treadle",
+    "--generate-vcd-output", "on",
     // "--backend-name", "vcs",
     // "--is-verbose",
     "--test-seed", "0"
