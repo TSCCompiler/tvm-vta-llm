@@ -121,6 +121,9 @@ v = vocab_size // 16
 k1 = te.reduce_axis((0, v), name="k")
 k2 = te.reduce_axis((0, 16), name="ik")
 
+k3 = te.reduce_axis((0, v), name="k")
+k4 = te.reduce_axis((0, 16), name="ik")
+
 A = te.placeholder((b, m, v, 16), name='A', dtype=env.acc_dtype)
 A_buf = te.compute((b, m, v, 16), lambda *indices: A(*indices), "A_buf")
 C_buf = te.compute(
@@ -129,7 +132,7 @@ C_buf = te.compute(
 )
 Exp_buf = te.compute((b, m, v, 16), lambda bi, mi, vi, tnsi : te.exp(A_buf(bi, mi, vi, tnsi) - C_buf(bi, mi) ) )
 
-Exp_buf_sum = te.compute((b, m), lambda bi, mi: te.sum(Exp_buf(bi, mi, k1, k2), axis=[k1, k2]) )
+Exp_buf_sum = te.compute((b, m), lambda bi, mi: te.sum(Exp_buf(bi, mi, k3, k4), axis=[k3, k4]) )
 Soft_max = te.compute((b, m, v, 16) , lambda bi, mi, vi, ti: Exp_buf(bi, mi, vi, ti) // Exp_buf_sum(bi, mi))
 
 # C_buf_pad = te.compute((b, m, 16), lambda bi, mi, pi: C_buf(bi, mi), "C_buf_pad")
@@ -142,8 +145,8 @@ print(tvm.lower(s, [A, C], simple_mode=True))
 s[A_buf].set_scope("local.acc_buffer")
 s[C_buf].set_scope("local.acc_buffer")
 s[Exp_buf].set_scope("local.acc_buffer")
-s[Exp_buf_sum].set_scope("local.acc_buffer")
-s[Soft_max].set_scope("local.acc_buffer")
+# s[Exp_buf_sum].set_scope("local.acc_buffer")
+# s[Soft_max].set_scope("local.acc_buffer")
 # s[C_buf_pad].set_scope("local.acc_buffer")
 print(s[C_buf].op.axis)
 cb_b, cb_m = s[C_buf].op.axis
