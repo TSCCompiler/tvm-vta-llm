@@ -354,6 +354,8 @@ s[res_shr].pragma(s[res_shr].op.axis[0], env.alu)
 s[res_min].pragma(s[res_min].op.axis[0], env.alu)
 s[res_max].pragma(s[res_max].op.axis[0], env.alu)
 
+print(tvm.lower(s, [data, kernel, res], simple_mode=True))
+
 # Let's look at the final lowered TVM schedule after lowering memory
 # loads/stores down to DMA copy intrinsics, and the computation down to
 # VTA compute intrinsics.
