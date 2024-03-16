@@ -45,6 +45,7 @@ import tvm.relay
 from tvm import te
 import vta
 import numpy as np
+import vta.build_module
 
 ######################################################################
 # Loading in VTA Parameters
@@ -79,6 +80,7 @@ from tvm.contrib import utils
 from vta.testing import simulator
 from vta.testing.simulator import load_module_with_lib, load_module_sim
 from vta.libinfo import find_libvta
+from my_vta_pipeline import my_build_config
 
 
 # We read the Pynq RPC host IP address and port number from the OS environment
@@ -160,8 +162,9 @@ s[C_buf].pragma(C_buf.op.axis[0], "alu")
 
 print(tvm.lower(s, [A, C], simple_mode=True))
 
-# Let's take a look at the finalized schedule
-# print(vta.lower(s, [A, C], simple_mode=True))
+with my_build_config():
+    # Let's take a look at the finalized schedule
+    print(tvm.lower(s, [A, C], simple_mode=True))
 
 # my_vmax = vta.build(
 #     s, [A, C], tvm.target.Target("ext_dev", host="llvm")
