@@ -151,7 +151,14 @@ s[Exp_buf_sum].set_scope("local.acc_buffer")
 s[Soft_max].set_scope("local.acc_buffer")
 # s[C_buf_pad].set_scope("local.acc_buffer")
 print(s[C_buf].op.axis)
-# cb_b, cb_m = s[C_buf].op.axis
+cb_b, cb_m, cb_ti = s[C_buf].op.axis
+s[C_buf].reorder(cb_b, cb_m, k1, k2, cb_ti)
+s[C_buf].vectorize(cb_ti)
+# s[C_buf].unroll(k2)
+# s[C_buf].vectorize(k2)
+# s[C_buf].unroll(cb_ti)
+# s[C_buf].unroll(k2)
+
 # cbp_b, cbp_m, _ = s[C_buf_pad].op.axis
 # s[C_buf].compute_at(s[C_buf_pad], cbp_m)
 
