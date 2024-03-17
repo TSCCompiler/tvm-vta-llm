@@ -132,28 +132,36 @@ C_buf = te.compute(
     (b, m, 16),
     lambda bi, mi, ti: te.max(A_buf(bi, mi, k1, k2), axis=[k1, k2])
 )
-Exp_buf = te.compute((b, m, v, 16), lambda bi, mi, vi, tnsi : te.exp(A_buf(bi, mi, vi, tnsi) - C_buf(bi, mi, tnsi) ) )
+# Exp_buf = te.compute((b, m, v, 16), lambda bi, mi, vi, tnsi : te.exp(A_buf(bi, mi, vi, tnsi) - C_buf(bi, mi, tnsi) ) )
+#
+# Exp_buf_sum = te.compute((b, m, 16), lambda bi, mi, ti: te.sum(Exp_buf(bi, mi, k3, k4), axis=[k3, k4]) )
+# Soft_max = te.compute((b, m, v, 16) , lambda bi, mi, vi, ti: Exp_buf(bi, mi, vi, ti) // Exp_buf_sum(bi, mi, ti))
 
-Exp_buf_sum = te.compute((b, m, 16), lambda bi, mi, ti: te.sum(Exp_buf(bi, mi, k3, k4), axis=[k3, k4]) )
-Soft_max = te.compute((b, m, v, 16) , lambda bi, mi, vi, ti: Exp_buf(bi, mi, vi, ti) // Exp_buf_sum(bi, mi, ti))
-
-# C_buf_pad = te.compute((b, m, 16), lambda bi, mi, pi: C_buf(bi, mi), "C_buf_pad")
-C = te.compute((b, m, v, 16), lambda *i : Soft_max(*i), name="C")
+C_buf_pad = te.compute((b, m, 16), lambda *i: C_buf(*i), "C_buf_pad")
+C = te.compute((b, m, 16), lambda *i : C_buf_pad(*i), "C")
+# C = te.compute((b, m, v, 16), lambda *i : Soft_max(*i), name="C")
 
 s = te.create_schedule(C.op)
 
-print(tvm.lower(s, [A, C], simple_mode=True))
+# print(tvm.lower(s, [A, C], simple_mode=True))
 
 s[A_buf].set_scope("local.acc_buffer")
 s[C_buf].set_scope("local.acc_buffer")
-s[Exp_buf].set_scope("local.acc_buffer")
-s[Exp_buf_sum].set_scope("local.acc_buffer")
-s[Soft_max].set_scope("local.acc_buffer")
+# s[Exp_buf].set_scope("local.acc_buffer")
+# s[Exp_buf_sum].set_scope("local.acc_buffer")
+# s[Soft_max].set_scope("local.acc_buffer")
 # s[C_buf_pad].set_scope("local.acc_buffer")
 print(s[C_buf].op.axis)
 cb_b, cb_m, cb_ti = s[C_buf].op.axis
 s[C_buf].reorder(cb_b, cb_m, k1, k2, cb_ti)
-s[C_buf].vectorize(cb_ti)
+s[C_buf].tensorize(k1, env.aluc)
+# s[C_buf].vectorize(cb_ti)
+# print(type(k2))
+# s[C_buf].tensorize(k1, env.alu)
+# s[Exp_buf].tensorize(s[Exp_buf].op.axis[2], env.alu)
+# s[Exp_buf].vectorize(s[Exp_buf].op.axis[3])
+# s[Exp_buf].tensorize(s[Exp_buf].op.axis[3], env.gemm)
+
 # s[C_buf].unroll(k2)
 # s[C_buf].vectorize(k2)
 # s[C_buf].unroll(cb_ti)
@@ -167,11 +175,13 @@ s[A_buf].pragma(s[A_buf].op.axis[0], "dma_copy")
 s[C].pragma(s[C].op.axis[0], "dma_copy")
 s[C_buf].pragma(C_buf.op.axis[0], "alu")
 
-print(tvm.lower(s, [A, C], simple_mode=True))
+tvm.lower(s, [A, C], simple_mode=True)
 
-with my_build_config():
-    # Let's take a look at the finalized schedule
-    print(tvm.lower(s, [A, C], simple_mode=True))
+# with my_build_config():
+#     # Let's take a look at the finalized schedule
+#     print(tvm.lower(s, [A, C], simple_mode=True))
+
+print(vta.lower(s, [A, C], simple_mode=True))
 
 # my_vmax = vta.build(
 #     s, [A, C], tvm.target.Target("ext_dev", host="llvm")

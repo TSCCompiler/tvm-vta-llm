@@ -17,11 +17,37 @@
 # pylint: disable=unused-argument, invalid-name
 """VTA specific buildin for runtime."""
 import tvm
+from tvm import IRModule
 from tvm.ir import register_intrin_lowering
 from . import transform
 from .environment import get_env, Environment
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 
+from .support import logging
+
+logger = logging.getLogger(__name__)
+
+
+@tvm.transform.module_pass(opt_level=0, name="DebugDump")
+class _DebugDump:  # pylint: disable=too-few-public-methods
+    """A dummy compiler pass that does nothing but logging.
+    Only enabled when debug_dump is not None"""
+
+    def __init__(self, file_name: str, file_path: Optional[Path], show_meta: bool = False):
+        self.file_name = file_name
+        self.file_path = file_path
+        self.show_meta = show_meta
+
+    def transform_module(self, mod: IRModule, _ctx: tvm.transform.PassContext) -> IRModule:
+        """A dummy transformation that dumps the module to file"""
+        if self.file_path is not None:
+            # NOTE: We use debug level here to avoid spamming the console
+            logger.debug("Dumping IR to %s", self.file_path / self.file_name)
+            with open(self.file_path / self.file_name, "w", encoding="utf-8") as f:
+                f.write(mod.script(show_meta=self.show_meta))
+        return mod
 def EarlyRewrite():
     """Try to do storage rewrite in early pass."""
 
@@ -67,8 +93,11 @@ def build_config(debug_flag=0, **kwargs):
         return f.with_body(tvm.tir.stmt_seq(debug, f.body))
 
     pass_list = [
+        (0, _DebugDump('original.py', Path('./'))),
         (0, transform.InjectConv2DTransposeSkip()),
+
         (1, transform.InjectDMAIntrin()),
+        (1, _DebugDump('after_injectDMA.py', Path('./'))),
         (1, transform.InjectSkipCopy()),
         (1, transform.AnnotateALUCoProcScope()),
         (1, tvm.tir.transform.LiftAttrScope("coproc_uop_scope")),

@@ -88,6 +88,7 @@ class DevContext(object):
         self.DEBUG_NO_SYNC = False
         env._dev_ctx = self
         self.gemm = intrin.gemm(env, env.mock_mode)
+        self.aluc = intrin.alu_intri(env, True)
 
     def get_task_qid(self, qid):
         """Get transformed queue index."""
@@ -222,6 +223,10 @@ class Environment(object):
     def gemm(self):
         """GEMM intrinsic"""
         return self.dev.gemm
+
+    @property
+    def aluc(self):
+        return self.dev.aluc
 
     @property
     def target(self):

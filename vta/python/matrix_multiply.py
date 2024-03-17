@@ -332,6 +332,7 @@ s[A_buf].set_scope(env.inp_scope)
 s[B_buf].set_scope(env.wgt_scope)
 s[C_buf].set_scope(env.acc_scope)
 
+
 ######################################################################
 # DMA Transfers
 # ~~~~~~~~~~~~~

@@ -20,6 +20,42 @@ from __future__ import absolute_import as _abs
 import tvm
 from tvm import te
 
+def alu_intri(env, mock=True):
+    inp = te.placeholder((16,), dtype="int%d" % env.ACC_WIDTH, name=env.acc_scope)
+    # out = te.placeholder((16), dtype="int%d" % env.ACC_WIDTH, name=env.acc_scope)
+    out_dtype = "int%d" % env.ACC_WIDTH
+    k = te.reduce_axis((0, 16), name='k')
+    out = te.compute(
+        (16,),
+        lambda i : te.sum(inp(k).astype(out_dtype), axis=[k]),
+        name='out',
+    )
+    inp_layout = tvm.tir.decl_buffer(
+        (16,),
+        inp.dtype,
+        env.acc_scope,
+        scope=env.acc_scope,
+        offset_factor=16,
+        data_alignment=16
+    )
+    out_layout = tvm.tir.decl_buffer(
+        out.shape,
+        out.dtype,
+        env.acc_scope,
+        scope=env.acc_scope,
+        offset_factor=16,
+        data_alignment=16,
+    )
+
+    def intrin_func(ins, outs):
+        dout = outs[0]
+
+        nop = tvm.tir.Evaluate(0)
+        return (nop, nop, nop)
+
+    return te.decl_tensor_intrin(
+        out.op, intrin_func, name='aluc', binds={inp: inp_layout, out: out_layout}
+    )
 
 def gemm(env, mock=False):
     """Matrix-matrix multiply intrinsic

@@ -7,27 +7,12 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from tvm import IRModule
 from vta.support import logging
-
+from vta.build_module import _DebugDump
 logger = logging.getLogger(__name__)
 
-@tvm.transform.module_pass(opt_level=0, name="DebugDump")
-class _DebugDump:  # pylint: disable=too-few-public-methods
-    """A dummy compiler pass that does nothing but logging.
-    Only enabled when debug_dump is not None"""
 
-    def __init__(self, file_name: str, file_path: Optional[Path], show_meta: bool = False):
-        self.file_name = file_name
-        self.file_path = file_path
-        self.show_meta = show_meta
 
-    def transform_module(self, mod: IRModule, _ctx: tvm.transform.PassContext) -> IRModule:
-        """A dummy transformation that dumps the module to file"""
-        if self.file_path is not None:
-            # NOTE: We use debug level here to avoid spamming the console
-            logger.debug("Dumping IR to %s", self.file_path / self.file_name)
-            with open(self.file_path / self.file_name, "w", encoding="utf-8") as f:
-                f.write(mod.script(show_meta=self.show_meta))
-        return mod
+
 def my_build_config(debug_flag=0, **kwargs):
     """Build a build config for VTA.
 
