@@ -27,7 +27,7 @@ def alu_intri(env, mock=True):
     k = te.reduce_axis((0, 16), name='k')
     out = te.compute(
         (16,),
-        lambda i : te.sum(inp(k).astype(out_dtype), axis=[k]),
+        lambda i: te.max(inp(k).astype(out_dtype), axis=[k]),
         name='out',
     )
     inp_layout = tvm.tir.decl_buffer(

@@ -137,8 +137,8 @@ C_buf = te.compute(
 # Exp_buf_sum = te.compute((b, m, 16), lambda bi, mi, ti: te.sum(Exp_buf(bi, mi, k3, k4), axis=[k3, k4]) )
 # Soft_max = te.compute((b, m, v, 16) , lambda bi, mi, vi, ti: Exp_buf(bi, mi, vi, ti) // Exp_buf_sum(bi, mi, ti))
 
-C_buf_pad = te.compute((b, m, 16), lambda *i: C_buf(*i), "C_buf_pad")
-C = te.compute((b, m, 16), lambda *i : C_buf_pad(*i), "C")
+# C_buf_pad = te.compute((b, m, 16), lambda *i: C_buf(*i), "C_buf_pad")
+C = te.compute((b, m, 16), lambda *i: C_buf(*i), "C")
 # C = te.compute((b, m, v, 16), lambda *i : Soft_max(*i), name="C")
 
 s = te.create_schedule(C.op)
@@ -147,14 +147,16 @@ s = te.create_schedule(C.op)
 
 s[A_buf].set_scope("local.acc_buffer")
 s[C_buf].set_scope("local.acc_buffer")
+# s[C].pragma(s[C].op.axis[0], env.dma_copy)
+
 # s[Exp_buf].set_scope("local.acc_buffer")
 # s[Exp_buf_sum].set_scope("local.acc_buffer")
 # s[Soft_max].set_scope("local.acc_buffer")
 # s[C_buf_pad].set_scope("local.acc_buffer")
-print(s[C_buf].op.axis)
+# print(s[C_buf].op.axis)
 cb_b, cb_m, cb_ti = s[C_buf].op.axis
 s[C_buf].reorder(cb_b, cb_m, k1, k2, cb_ti)
-s[C_buf].tensorize(k1, env.aluc)
+s[C_buf].tensorize(k2, env.aluc)
 # s[C_buf].vectorize(cb_ti)
 # print(type(k2))
 # s[C_buf].tensorize(k1, env.alu)
@@ -171,9 +173,8 @@ s[C_buf].tensorize(k1, env.aluc)
 # s[C_buf].compute_at(s[C_buf_pad], cbp_m)
 
 s[A_buf].pragma(s[A_buf].op.axis[0], "dma_copy")
-
-s[C].pragma(s[C].op.axis[0], "dma_copy")
 s[C_buf].pragma(C_buf.op.axis[0], "alu")
+s[C].pragma(s[C].op.axis[0], "dma_copy")
 
 tvm.lower(s, [A, C], simple_mode=True)
 
