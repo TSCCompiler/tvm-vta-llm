@@ -33,7 +33,7 @@ message(STATUS "VTA HW PATH ${VTA_HW_PATH}")
 #add_definitions("-DTVM_EXPORTS=")
 
 
-if(MSVC)
+if(MSVC2)
   message(STATUS "VTA build is skipped in Windows..")
 elseif(NOT EXISTS ${VTA_HW_PATH})
   if (USE_VTA_TSIM OR USE_VTA_FSIM OR USE_UFPGA)

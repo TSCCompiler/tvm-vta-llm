@@ -27,7 +27,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#if defined(WIN32)
+#include <windows.h>
+#else
 #include <unistd.h>
+#endif
 #include <vector>
 #include <ctime>
 #include <cassert>

@@ -27,8 +27,12 @@ set(VERILATOR_OPT "${VERILATOR_OPT} -I${CHISEL_BUILD_DIR}")
 #string(REPLACE ";" "TEST" VERILATOR_OPT_STR ${VERILATOR_OPT})
 
 message(STATUS "verilator compile flags ${VERILATOR_OPT}")
+if (MSVC)
+#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -include V${TOP_TEST}.h")
+else (MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-sign-compare -include V${TOP_TEST}.h")
+endif (MSVC)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-sign-compare -include V${TOP_TEST}.h")
 add_definitions(
         "-DVL_TSIM_NAME=V${TOP_TEST}"
         -DVL_PRINTF=printf
