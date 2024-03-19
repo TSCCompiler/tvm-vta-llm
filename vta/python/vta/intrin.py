@@ -49,13 +49,54 @@ def alu_intri(env, mock=True):
 
     def intrin_func(ins, outs):
         dout = outs[0]
-
+        dinp = ins[0]
         nop = tvm.tir.Evaluate(0)
-        return (nop, nop, nop)
+
+        def instr(index):
+            """create reduce op instruction"""
+            irb = tvm.tir.ir_builder.create()
+            dev = env.dev
+            irb.scope_attr(dev.vta_axis, "coproc_scope", dev.get_task_qid(dev.QID_COMPUTE))
+            # irb.scope_attr(dev.vta_axis, "coproc_uop_scope", dev.vta_push_uop)
+            if index in (0, 2):
+                irb.emit(
+                    tvm.tir.call_intrin(
+                        "int32",
+                        "tir.vta.uop_push",
+                        0,
+                        0,
+                        dout.access_ptr("rw", "int32"),
+                        dinp.access_ptr("r", "int32"),
+                        0,
+                        0,
+                        0,
+                        0,
+                    )
+                )
+                return irb.get()
+            else:
+                irb.emit(
+                    tvm.tir.call_intrin(
+                        "int32",
+                        "tir.vta.uop_push",
+                        0,
+                        1,
+                        dout.access_ptr("rw", "int32"),
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                    )
+                )
+                return irb.get()
+
+        return (instr(0), instr(1), instr(2))
 
     return te.decl_tensor_intrin(
         out.op, intrin_func, name='aluc', binds={inp: inp_layout, out: out_layout}
     )
+
 
 def gemm(env, mock=False):
     """Matrix-matrix multiply intrinsic

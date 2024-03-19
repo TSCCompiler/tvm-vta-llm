@@ -130,7 +130,7 @@ A = te.placeholder((b, m, v, 16), name='A', dtype=env.acc_dtype)
 A_buf = te.compute((b, m, v, 16), lambda *indices: A(*indices), "A_buf")
 C_buf = te.compute(
     (b, m, 16),
-    lambda bi, mi, ti: te.max(A_buf(bi, mi, k1, k2), axis=[k1, k2])
+    lambda bi, mi, ti: te.max(A_buf(bi, mi, k1, k2), axis=[k1, k2]), "C_buf"
 )
 # Exp_buf = te.compute((b, m, v, 16), lambda bi, mi, vi, tnsi : te.exp(A_buf(bi, mi, vi, tnsi) - C_buf(bi, mi, tnsi) ) )
 #
@@ -173,8 +173,9 @@ s[C_buf].tensorize(k2, env.aluc)
 # s[C_buf].compute_at(s[C_buf_pad], cbp_m)
 
 s[A_buf].pragma(s[A_buf].op.axis[0], "dma_copy")
-s[C_buf].pragma(C_buf.op.axis[0], "alu")
 s[C].pragma(s[C].op.axis[0], "dma_copy")
+s[C_buf].pragma(C_buf.op.axis[0], "aluc")
+
 
 tvm.lower(s, [A, C], simple_mode=True)
 
