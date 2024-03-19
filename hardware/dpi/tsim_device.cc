@@ -22,6 +22,7 @@
 #include <thread>
 #include <vta/dpi/tsim.h>
 #include <verilated.h>
+#include <VTest.h>
 
 #if VM_TRACE
 #ifdef VM_TRACE_FST
