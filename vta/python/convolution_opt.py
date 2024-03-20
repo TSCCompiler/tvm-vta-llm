@@ -38,6 +38,10 @@ maximize VTA's compute and memory resource utilization.
 from __future__ import absolute_import, print_function
 
 import os
+
+os.environ["PATH"] = "D:\\workspace\\project\\nn_compiler\\tvm\\cmake-build-release_mingw;C:\\Program Files (" \
+                     "x86)\\Microsoft Visual Studio 14.0\\VC\\bin\\amd64;D:\\Halide\llvm-install-rel\\bin;" \
+                     "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.0\\bin;" + os.environ["PATH"]
 import tvm
 import tvm.testing
 from tvm import te
@@ -47,6 +51,7 @@ import numpy as np
 from tvm import rpc
 from tvm.contrib import utils
 from vta.testing import simulator
+from vta.testing.simulator import load_module_with_lib, load_module_sim
 
 # Load VTA parameters from the 3rdparty/vta-hw/config/vta_config.json file
 env = vta.get_env()
@@ -74,6 +79,11 @@ if env.TARGET == "pynq":
 # In simulation mode, host the RPC server locally.
 elif env.TARGET in ["sim", "tsim"]:
     remote = rpc.LocalSession()
+
+
+    @tvm._ffi.register_func("tvm.rpc.server.load_module", override=True)
+    def load_module(file_name):
+        return load_module_sim(file_name)
 
 ######################################################################
 # Computation Declaration
@@ -139,8 +149,8 @@ pad_h = 1
 pad_w = 1
 stride_h = 1
 stride_w = 1
-print("env.Inch "+str(env.BLOCK_IN))
-print("env.Out "+str(env.BLOCK_OUT))
+print("env.Inch " + str(env.BLOCK_IN))
+print("env.Out " + str(env.BLOCK_OUT))
 assert batch_size % env.BATCH == 0
 assert in_channels % env.BLOCK_IN == 0
 assert out_channels % env.BLOCK_OUT == 0
@@ -212,7 +222,6 @@ res_min = te.compute(output_shape, lambda *i: tvm.te.min(res_max(*i), inp_max), 
 
 # Result Tensor
 res = te.compute(output_shape, lambda *i: res_min(*i).astype(env.inp_dtype), name="res")
-
 
 ######################################################################
 # Scheduling the Computation
@@ -377,10 +386,10 @@ with vta.build_config(disabled_pass={"tir.CommonSubexprElimTIR"}):
     my_conv = vta.build(
         s, [data, kernel, res], tvm.target.Target("ext_dev", host=env.target_host), name="my_conv"
     )
-temp = utils.tempdir()
-my_conv.save(temp.relpath("conv2d.o"))
-remote.upload(temp.relpath("conv2d.o"))
-f = remote.load_module("conv2d.o")
+temp = "./"
+my_conv.save(os.path.join(temp, "conv2d.o"))
+remote.upload(os.path.join(temp, "conv2d.o"))
+f = remote.load_module(os.path.join(temp,"conv2d.o"))
 
 # Get the remote device context
 ctx = remote.ext_dev(0)
@@ -570,5 +579,3 @@ print("Successful 2D convolution test!")
 # }
 #
 #
-
-
