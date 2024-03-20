@@ -95,13 +95,13 @@ def build_config(debug_flag=0, **kwargs):
     pass_list = [
         (0, _DebugDump('original.py', Path('./'))),
         (0, transform.InjectConv2DTransposeSkip()),
-
         (1, transform.InjectDMAIntrin()),
         (1, _DebugDump('after_injectDMA.py', Path('./'))),
         (1, transform.InjectSkipCopy()),
         (1, transform.AnnotateALUCoProcScope()),
         (1, tvm.tir.transform.LiftAttrScope("coproc_uop_scope")),
         (1, transform.LiftAllocToScopeBegin()),
+        (1, _DebugDump('after_liftAllocToScopeBegin.py', Path('./'))),
         (1, tvm.tir.transform.LiftAttrScope("coproc_scope")),
         (1, transform.InjectCoProcSync()),
         (1, EarlyRewrite()),
@@ -111,7 +111,9 @@ def build_config(debug_flag=0, **kwargs):
     pass_list.append((2, transform.InjectALUIntrin()))
     pass_list.append((3, tvm.tir.transform.LowerDeviceStorageAccessInfo()))
     pass_list.append((3, transform.FoldUopLoop()))
+    pass_list.append((3, _DebugDump("after_FoldUopFor.py", Path("./"))))
     pass_list.append((3, transform.CPUAccessRewrite()))
+    pass_list.append((3, _DebugDump("after_cpu_access_rewrite.py", Path("./"))))
     config = {"tir.add_lower_pass": pass_list}
     if kwargs.get("config"):
         config.update(kwargs[config])

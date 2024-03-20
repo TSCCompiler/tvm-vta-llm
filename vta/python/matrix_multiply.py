@@ -386,6 +386,8 @@ s[C_buf].reorder(
 )
 s[C_buf].tensorize(s[C_buf].op.axis[2], env.gemm)
 
+
+print(tvm.lower(s, [A, B,C], simple_mode=True))
 # Let's take a look at the finalized schedule
 print(vta.lower(s, [A, B, C], simple_mode=True))
 

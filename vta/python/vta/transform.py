@@ -35,7 +35,7 @@ def _match_pragma(stmt, key):
         The pragma key
     """
     return (stmt.attr_key == "pragma_" + key) or (
-        stmt.attr_key == "pragma_scope" and stmt.value.value == key
+            stmt.attr_key == "pragma_scope" and stmt.value.value == key
     )
 
 
@@ -82,7 +82,7 @@ def FoldUopLoop():
                     else:
                         gemm_offsets[i] = m[0]
                         args.append(m[1])
-                args += op.args[base_args + 3 :]
+                args += op.args[base_args + 3:]
                 return tvm.tir.call_intrin("int32", builtin_uop_push, *args)
             if op.op.name not in ("tir.vta.command_handle", "tir.tvm_thread_context"):
                 raise RuntimeError("unexpected op %s" % op)
@@ -106,9 +106,10 @@ def FoldUopLoop():
     def _do_fold(stmt):
         env = get_env()
         if (
-            stmt.attr_key == "coproc_uop_scope"
-            and isinstance(stmt.value, tvm.tir.StringImm)
-            and stmt.value.value == env.dev.vta_push_uop.value
+                stmt.attr_key == "coproc_uop_scope"
+                and isinstance(stmt.value, tvm.tir.StringImm)
+                and (stmt.value.value == env.dev.vta_push_uop.value or
+                     stmt.value.value == "VTAPushReduceOp")
         ):
             body = stmt.body
             begins = []
@@ -450,8 +451,8 @@ def InjectDMAIntrin():
             """Internal function to raise error"""
             raise RuntimeError(
                 (
-                    "Scope[%s]: cannot detect 2d pattern with elem_block=%d:"
-                    + " shape=%s, strides=%s"
+                        "Scope[%s]: cannot detect 2d pattern with elem_block=%d:"
+                        + " shape=%s, strides=%s"
                 )
                 % (scope, elem_block, buf.shape, buf.strides)
             )
@@ -919,7 +920,7 @@ def InjectALUIntrin():
                     next_ext = extents.pop()
 
                     if analyzer.can_prove_equal(next_src, vsrc * vext) and analyzer.can_prove_equal(
-                        next_dst, vdst * vext
+                            next_dst, vdst * vext
                     ):
                         vext = analyzer.simplify(vext * next_ext)
                     else:

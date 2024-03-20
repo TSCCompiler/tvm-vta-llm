@@ -155,7 +155,9 @@ s[C_buf].set_scope("local.acc_buffer")
 # s[C_buf_pad].set_scope("local.acc_buffer")
 # print(s[C_buf].op.axis)
 cb_b, cb_m, cb_ti = s[C_buf].op.axis
-s[C_buf].reorder(cb_b, cb_m, k1, k2, cb_ti)
+# s[A_buf].compute_at(s[C_buf], k1)
+# s[C_buf].reorder(cb_b, cb_m, k1, k2, cb_ti)
+s[C_buf].reorder(k1, cb_m, cb_b, k2, cb_ti)
 s[C_buf].tensorize(k2, env.aluc)
 # s[C_buf].vectorize(cb_ti)
 # print(type(k2))
@@ -174,7 +176,7 @@ s[C_buf].tensorize(k2, env.aluc)
 
 s[A_buf].pragma(s[A_buf].op.axis[0], "dma_copy")
 s[C].pragma(s[C].op.axis[0], "dma_copy")
-s[C_buf].pragma(C_buf.op.axis[0], "aluc")
+# s[C_buf].pragma(C_buf.op.axis[0], "aluc")
 
 
 tvm.lower(s, [A, C], simple_mode=True)

@@ -56,9 +56,11 @@ def alu_intri(env, mock=True):
             """create reduce op instruction"""
             irb = tvm.tir.ir_builder.create()
             dev = env.dev
-            irb.scope_attr(dev.vta_axis, "coproc_scope", dev.get_task_qid(dev.QID_COMPUTE))
-            # irb.scope_attr(dev.vta_axis, "coproc_uop_scope", dev.vta_push_uop)
+
+
             if index in (0, 2):
+                irb.scope_attr(dev.vta_axis, "coproc_scope", 5)
+                irb.scope_attr(dev.vta_axis, "coproc_uop_scope", dev.vta_push_reduce_uop)
                 irb.emit(
                     tvm.tir.call_intrin(
                         "int32",
@@ -75,6 +77,8 @@ def alu_intri(env, mock=True):
                 )
                 return irb.get()
             else:
+                irb.scope_attr(dev.vta_axis, "coproc_scope", 4)
+                irb.scope_attr(dev.vta_axis, "coproc_uop_scope", dev.vta_push_uop)
                 irb.emit(
                     tvm.tir.call_intrin(
                         "int32",
