@@ -970,6 +970,10 @@ def InjectALUIntrin():
                     alu_opcode = env.dev.ALU_OPCODE_MUL
                     lhs = loop_body.value.a
                     rhs = loop_body.value.b
+                elif isinstance(loop_body.value, tvm.tir.FloorDiv):
+                    alu_opcode = env.dev.ALU_OPCODE_DIV
+                    lhs = loop_body.value.a
+                    rhs = loop_body.value.b
                 elif isinstance(loop_body.value, tvm.tir.Min):
                     alu_opcode = env.dev.ALU_OPCODE_MIN
                     lhs = loop_body.value.a
@@ -987,6 +991,14 @@ def InjectALUIntrin():
                         alu_opcode = env.dev.ALU_OPCODE_SHR
                         lhs = loop_body.value.args[0]
                         rhs = loop_body.value.args[1]
+                    elif loop_body.value.op.name == "tir.exp":
+                        inner_body = loop_body.value.args[0]
+                        if isinstance(inner_body, tvm.tir.Sub):
+                            alu_opcode = env.dev.ALU_OPCODE_EXP_SUB
+                            lhs = inner_body.a
+                            rhs = inner_body.b
+                        else:
+                            raise RuntimeError("Function call not recognized %s" % (loop_body.value.name))
                     else:
                         raise RuntimeError(
                             "Function call not recognized %s" % (loop_body.value.name)

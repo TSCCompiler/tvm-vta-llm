@@ -133,13 +133,18 @@ C_buf = te.compute(
     (ob, m, env.BATCH, env.BLOCK_OUT),
     lambda obi, mi, bi, ti: te.max(A_buf(obi, mi, k1, bi, k2), axis=[k1, k2]), "C_buf"
 )
-# Exp_buf = te.compute((b, m, v, 16), lambda bi, mi, vi, tnsi : te.exp(A_buf(bi, mi, vi, tnsi) - C_buf(bi, mi, tnsi) ) )
-#
-# Exp_buf_sum = te.compute((b, m, 16), lambda bi, mi, ti: te.sum(Exp_buf(bi, mi, k3, k4), axis=[k3, k4]) )
-# Soft_max = te.compute((b, m, v, 16) , lambda bi, mi, vi, ti: Exp_buf(bi, mi, vi, ti) // Exp_buf_sum(bi, mi, ti))
+Exp_buf = te.compute((ob, m, v, env.BATCH, env.BLOCK_OUT),
+                     lambda obi, mi, vi, bi, tnsi: te.exp(A_buf(obi, mi, vi, bi, tnsi) - C_buf(obi, mi, bi, tnsi)),
+                     "Exp_buf")
+
+Exp_buf_sum = te.compute((ob, m, env.BATCH, env.BLOCK_OUT),
+                         lambda obi, mi, bi, ti: te.sum(Exp_buf(obi, mi, k3, bi, k4), axis=[k3, k4]))
+
+Soft_max = te.compute((ob, m, v, env.BATCH, env.BLOCK_OUT),
+                      lambda obi, mi, vi, bi, ti: Exp_buf(obi, mi, vi, bi, ti) // Exp_buf_sum(obi, mi, bi, ti))
 
 # C_buf_pad = te.compute((b, m, 16), lambda *i: C_buf(*i), "C_buf_pad")
-C = te.compute((ob, m, env.BATCH, env.BLOCK_OUT), lambda *i: C_buf(*i), "C")
+C = te.compute((ob, m, v, env.BATCH, env.BLOCK_OUT), lambda *i: Soft_max(*i), "C")
 # C = te.compute((b, m, v, 16), lambda *i : Soft_max(*i), name="C")
 
 s = te.create_schedule(C.op)
@@ -148,6 +153,9 @@ s = te.create_schedule(C.op)
 
 s[A_buf].set_scope("local.acc_buffer")
 s[C_buf].set_scope("local.acc_buffer")
+s[Exp_buf].set_scope("local.acc_buffer")
+s[Exp_buf_sum].set_scope("local.acc_buffer")
+s[Soft_max].set_scope("local.acc_buffer")
 # s[C].pragma(s[C].op.axis[0], env.dma_copy)
 
 # s[Exp_buf].set_scope("local.acc_buffer")
@@ -160,6 +168,10 @@ cb_b, cb_m, cb_bi, cb_ti = s[C_buf].op.axis
 # s[C_buf].reorder(cb_b, cb_m, k1, k2, cb_ti)
 s[C_buf].reorder(k1, cb_m, cb_b, cb_bi, k2, cb_ti)
 s[C_buf].tensorize(cb_bi, env.aluc)
+
+sum_ob, sum_m, sum_bi, sum_ti = s[Exp_buf_sum].op.axis
+s[Exp_buf_sum].reorder(k3, sum_ob, sum_m, sum_bi, k4, sum_ti)
+s[Exp_buf_sum].tensorize(sum_bi, env.pool_sum)
 # s[C_buf].vectorize(cb_ti)
 # print(type(k2))
 # s[C_buf].tensorize(k1, env.alu)
@@ -177,7 +189,8 @@ s[C_buf].tensorize(cb_bi, env.aluc)
 
 s[A_buf].pragma(s[A_buf].op.axis[0], "dma_copy")
 s[C].pragma(s[C].op.axis[0], "dma_copy")
-# s[C_buf].pragma(C_buf.op.axis[0], "aluc")
+s[Exp_buf].pragma(Exp_buf.op.axis[0], "alu")
+s[Soft_max].pragma(Soft_max.op.axis[0], "alu")
 
 
 tvm.lower(s, [A, C], simple_mode=True)

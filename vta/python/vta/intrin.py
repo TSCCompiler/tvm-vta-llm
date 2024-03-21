@@ -21,16 +21,25 @@ import tvm
 from tvm import te
 
 
-def alu_intri(env, mock=True):
+def alu_intri(env, optype='max', mock=True):
     inp = te.placeholder((env.BATCH, env.BLOCK_OUT), dtype="int%d" % env.ACC_WIDTH, name=env.acc_scope)
     # out = te.placeholder((16), dtype="int%d" % env.ACC_WIDTH, name=env.acc_scope)
     out_dtype = "int%d" % env.ACC_WIDTH
     k = te.reduce_axis((0, env.BLOCK_OUT), name='k')
-    out = te.compute(
-        (env.BATCH, env.BLOCK_OUT),
-        lambda bi, i: te.max(inp(bi, k).astype(out_dtype), axis=[k]),
-        name='out',
-    )
+    if optype == 'max':
+        out = te.compute(
+            (env.BATCH, env.BLOCK_OUT),
+            lambda bi, i: te.max(inp(bi, k).astype(out_dtype), axis=[k]),
+            name='out',
+        )
+    elif optype == "sum":
+        out = te.compute(
+            (env.BATCH, env.BLOCK_OUT),
+            lambda bi, i: te.sum(inp(bi, k).astype(out_dtype), axis=[k]),
+            name='out',
+        )
+    else:
+        raise RuntimeError("not supported " + str(optype))
     inp_layout = tvm.tir.decl_buffer(
         (env.BATCH, env.BLOCK_OUT),
         inp.dtype,

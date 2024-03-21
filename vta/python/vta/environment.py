@@ -73,6 +73,9 @@ class DevContext(object):
     ALU_OPCODE_ADD = 2
     ALU_OPCODE_SHR = 3
     ALU_OPCODE_MUL = 4
+    ALU_OPCODE_SUB = 5
+    ALU_OPCODE_EXP_SUB = 6
+    ALU_OPCODE_DIV = 7
     # Task queue id (pipeline stage)
     QID_LOAD_INP = 1
     QID_LOAD_WGT = 1
@@ -89,7 +92,8 @@ class DevContext(object):
         self.DEBUG_NO_SYNC = False
         env._dev_ctx = self
         self.gemm = intrin.gemm(env, env.mock_mode)
-        self.aluc = intrin.alu_intri(env, True)
+        self.aluc = intrin.alu_intri(env, optype="max", mock=True)
+        self.pool_sum = intrin.alu_intri(env, optype="sum")
 
     def get_task_qid(self, qid):
         """Get transformed queue index."""
@@ -228,6 +232,10 @@ class Environment(object):
     @property
     def aluc(self):
         return self.dev.aluc
+
+    @property
+    def pool_sum(self):
+        return self.dev.pool_sum
 
     @property
     def target(self):
