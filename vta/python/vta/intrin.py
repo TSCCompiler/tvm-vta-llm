@@ -20,18 +20,19 @@ from __future__ import absolute_import as _abs
 import tvm
 from tvm import te
 
+
 def alu_intri(env, mock=True):
-    inp = te.placeholder((16,), dtype="int%d" % env.ACC_WIDTH, name=env.acc_scope)
+    inp = te.placeholder((env.BATCH, env.BLOCK_OUT), dtype="int%d" % env.ACC_WIDTH, name=env.acc_scope)
     # out = te.placeholder((16), dtype="int%d" % env.ACC_WIDTH, name=env.acc_scope)
     out_dtype = "int%d" % env.ACC_WIDTH
-    k = te.reduce_axis((0, 16), name='k')
+    k = te.reduce_axis((0, env.BLOCK_OUT), name='k')
     out = te.compute(
-        (16,),
-        lambda i: te.max(inp(k).astype(out_dtype), axis=[k]),
+        (env.BATCH, env.BLOCK_OUT),
+        lambda bi, i: te.max(inp(bi, k).astype(out_dtype), axis=[k]),
         name='out',
     )
     inp_layout = tvm.tir.decl_buffer(
-        (16,),
+        (env.BATCH, env.BLOCK_OUT),
         inp.dtype,
         env.acc_scope,
         scope=env.acc_scope,
@@ -56,7 +57,6 @@ def alu_intri(env, mock=True):
             """create reduce op instruction"""
             irb = tvm.tir.ir_builder.create()
             dev = env.dev
-
 
             if index in (0, 2):
                 irb.scope_attr(dev.vta_axis, "coproc_scope", 5)
@@ -95,7 +95,7 @@ def alu_intri(env, mock=True):
                 )
                 return irb.get()
 
-        return (instr(0), instr(1), instr(2))
+        return instr(0), instr(1), instr(2)
 
     return te.decl_tensor_intrin(
         out.op, intrin_func, name='aluc', binds={inp: inp_layout, out: out_layout}

@@ -116,6 +116,7 @@ elif env.TARGET in ("sim", "tsim", "intelfocl"):
         vta.program_fpga(remote, bitstream="vta.bitstream")
 
 b = 1
+ob = b // env.BATCH
 m = 4
 vocab_size = 1024
 v = vocab_size // 16
@@ -126,11 +127,11 @@ k2 = te.reduce_axis((0, 16), name="ik")
 k3 = te.reduce_axis((0, v), name="k")
 k4 = te.reduce_axis((0, 16), name="ik")
 
-A = te.placeholder((b, m, v, 16), name='A', dtype=env.acc_dtype)
-A_buf = te.compute((b, m, v, 16), lambda *indices: A(*indices), "A_buf")
+A = te.placeholder((ob, m, v, env.BATCH, env.BLOCK_OUT), name='A', dtype=env.acc_dtype)
+A_buf = te.compute((ob, m, v, env.BATCH, env.BLOCK_OUT), lambda *indices: A(*indices), "A_buf")
 C_buf = te.compute(
-    (b, m, 16),
-    lambda bi, mi, ti: te.max(A_buf(bi, mi, k1, k2), axis=[k1, k2]), "C_buf"
+    (ob, m, env.BATCH, env.BLOCK_OUT),
+    lambda obi, mi, bi, ti: te.max(A_buf(obi, mi, k1, bi, k2), axis=[k1, k2]), "C_buf"
 )
 # Exp_buf = te.compute((b, m, v, 16), lambda bi, mi, vi, tnsi : te.exp(A_buf(bi, mi, vi, tnsi) - C_buf(bi, mi, tnsi) ) )
 #
@@ -138,7 +139,7 @@ C_buf = te.compute(
 # Soft_max = te.compute((b, m, v, 16) , lambda bi, mi, vi, ti: Exp_buf(bi, mi, vi, ti) // Exp_buf_sum(bi, mi, ti))
 
 # C_buf_pad = te.compute((b, m, 16), lambda *i: C_buf(*i), "C_buf_pad")
-C = te.compute((b, m, 16), lambda *i: C_buf(*i), "C")
+C = te.compute((ob, m, env.BATCH, env.BLOCK_OUT), lambda *i: C_buf(*i), "C")
 # C = te.compute((b, m, v, 16), lambda *i : Soft_max(*i), name="C")
 
 s = te.create_schedule(C.op)
@@ -154,11 +155,11 @@ s[C_buf].set_scope("local.acc_buffer")
 # s[Soft_max].set_scope("local.acc_buffer")
 # s[C_buf_pad].set_scope("local.acc_buffer")
 # print(s[C_buf].op.axis)
-cb_b, cb_m, cb_ti = s[C_buf].op.axis
+cb_b, cb_m, cb_bi, cb_ti = s[C_buf].op.axis
 # s[A_buf].compute_at(s[C_buf], k1)
 # s[C_buf].reorder(cb_b, cb_m, k1, k2, cb_ti)
-s[C_buf].reorder(k1, cb_m, cb_b, k2, cb_ti)
-s[C_buf].tensorize(k2, env.aluc)
+s[C_buf].reorder(k1, cb_m, cb_b, cb_bi, k2, cb_ti)
+s[C_buf].tensorize(cb_bi, env.aluc)
 # s[C_buf].vectorize(cb_ti)
 # print(type(k2))
 # s[C_buf].tensorize(k1, env.alu)
