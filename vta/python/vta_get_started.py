@@ -37,8 +37,9 @@ from __future__ import absolute_import, print_function
 import os
 
 os.environ[
-    "PATH"] = "D:\\workspace\\project\\nn_compiler\\tvm\\cmake-build-release_mingw;C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin\\amd64;D:\\Halide\llvm-install-rel\\bin;" \
-              "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.0\\bin;" + os.environ["PATH"]
+    "PATH"] = "D:\\workspace\\project\\nn_compiler\\tvm\\cmake-build-debug-visual-studio-2022;" \
+              "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin\\amd64;D:\\Halide\llvm-install-rel\\bin;" \
+              "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.8\\bin;" + os.environ["PATH"]
 # print(os.environ["PATH"])
 import tvm
 import tvm.relay
@@ -370,10 +371,10 @@ lib_driver_name = (
     if env.TARGET == "intelfocl"
     else "libvta_fsim"
 )
-lib_driver = ""
-if os.name == 'nt':
-    lib_driver = find_libvta(lib_driver_name, optional=(not require_sim))
-    lib_driver = ";" + lib_driver[0] + ".a.lib"
+# lib_driver = ""
+# if os.name == 'nt':
+#     lib_driver = find_libvta(lib_driver_name, optional=(not require_sim))
+#     lib_driver = ";" + lib_driver[0] + ".a.lib"
 # f = remote.load_module(os.path.join(temp, "vadd.o")+";D:/workspace/project/nn_compiler/vta-hw/cmake-build-release-mingw_x86_64/libvta_tsim.dll.a.lib")
 # f = remote.load_module(os.path.join(temp, "vadd.o")+";D:/workspace/project/nn_compiler/vta-hw/cmake-build-release-mingw_x86_64/libvta_fsim.dll.a.lib")
 # f = remote.load_module(os.path.join(temp, "vadd.o") + lib_driver)

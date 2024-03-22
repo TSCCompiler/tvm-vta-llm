@@ -84,19 +84,21 @@ def load_module_sim(file_name):
     require_sim = env.TARGET in ("sim", "tsim")
 
     lib_driver_name = (
-        "libvta_tsim"
+        "vta_tsim"
         if env.TARGET == "tsim"
-        else "libvta"
+        else "vta"
         if env.TARGET == "intelfocl"
-        else "libvta_fsim"
+        else "vta_fsim"
     )
+    if os.name != "nt":
+        lib_driver_name = "lib"+lib_driver_name
     # args = str(file_name).split(';')
     file_name = str(file_name)
     ext_lib = []
     # lib_driver = ""
     if os.name == 'nt':
         lib_driver = find_libvta(lib_driver_name, optional=(not require_sim))
-        lib_driver = lib_driver[0] + ".a.lib"
+        lib_driver = str(lib_driver[0]).replace('.dll', '.lib')  # + ".a.lib"
         ext_lib.append(lib_driver)
 
     """Load module from remote side."""
@@ -111,12 +113,14 @@ def _load_sw():
 
     env = get_env()
     lib_driver_name = (
-        "libvta_tsim"
+        "vta_tsim"
         if env.TARGET == "tsim"
-        else "libvta"
+        else "vta"
         if env.TARGET == "intelfocl"
-        else "libvta_fsim"
+        else "vta_fsim"
     )
+    if os.name != "nt":
+        lib_driver_name = "lib"+lib_driver_name
     require_sim = env.TARGET in ("sim", "tsim")
     libs = []
 
