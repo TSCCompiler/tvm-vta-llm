@@ -86,7 +86,7 @@ def alu_intri(env, optype='max', mock=True):
                 )
                 return irb.get()
             else:
-                irb.scope_attr(dev.vta_axis, "coproc_scope", 4)
+                irb.scope_attr(dev.vta_axis, "coproc_scope", 5)
                 irb.scope_attr(dev.vta_axis, "coproc_uop_scope", dev.vta_push_reduce_uop)
                 irb.emit(
                     tvm.tir.call_intrin(

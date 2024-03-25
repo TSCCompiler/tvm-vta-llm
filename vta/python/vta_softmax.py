@@ -82,7 +82,6 @@ from vta.testing.simulator import load_module_with_lib, load_module_sim
 from vta.libinfo import find_libvta
 from my_vta_pipeline import my_build_config
 
-
 # We read the Pynq RPC host IP address and port number from the OS environment
 host = os.environ.get("VTA_RPC_HOST", "192.168.6.200")
 port = int(os.environ.get("VTA_RPC_PORT", "9091"))
@@ -107,9 +106,11 @@ if env.TARGET == "pynq" or env.TARGET == "de10nano":
 elif env.TARGET in ("sim", "tsim", "intelfocl"):
     remote = rpc.LocalSession()
 
+
     @tvm._ffi.register_func("tvm.rpc.server.load_module", override=True)
     def load_module(file_name):
         return load_module_sim(file_name)
+
 
     if env.TARGET in ["intelfocl"]:
         # program intelfocl aocx
@@ -143,11 +144,19 @@ Exp_buf_sum = te.compute((ob, m, env.BATCH, env.BLOCK_OUT),
 Soft_max = te.compute((ob, m, v, env.BATCH, env.BLOCK_OUT),
                       lambda obi, mi, vi, bi, ti: Exp_buf(obi, mi, vi, bi, ti) // Exp_buf_sum(obi, mi, bi, ti))
 
-
-# C = te.compute((ob, m, v, env.BATCH, env.BLOCK_OUT), lambda *i: Soft_max(*i), "C")
-C = te.compute((ob, m, env.BATCH, env.BLOCK_OUT), lambda *i: C_buf(*i), "C")
+C = te.compute((ob, m, v, env.BATCH, env.BLOCK_OUT), lambda *i: Soft_max(*i), "C")
+# C = te.compute((ob, m, env.BATCH, env.BLOCK_OUT), lambda *i: Exp_buf_sum(*i), "C")
 
 s = te.create_schedule(C.op)
+
+# s[A_buf].compute_at(s[Exp_buf], s[Exp_buf].op.axis[1])
+# s[C_buf].compute_at(s[Exp_buf], s[Exp_buf].op.axis[1])
+
+s[A_buf].compute_at(s[C], s[C].op.axis[1])
+s[C_buf].compute_at(s[C], s[C].op.axis[1])
+s[Exp_buf].compute_at(s[C], s[C].op.axis[1])
+s[Exp_buf_sum].compute_at(s[C], s[C].op.axis[1])
+s[Soft_max].compute_at(s[C], s[C].op.axis[1])
 
 # print(tvm.lower(s, [A, C], simple_mode=True))
 cb_b, cb_m, cb_bi, cb_ti = s[C_buf].op.axis
@@ -156,31 +165,29 @@ cb_b, cb_m, cb_bi, cb_ti = s[C_buf].op.axis
 # s[C_buf].reorder(cb_b, cb_m, k1, k2, cb_ti)
 s[C_buf].reorder(cb_m, k1, cb_b, cb_bi, k2, cb_ti)
 s[C_buf].tensorize(cb_bi, env.aluc)
-s[A_buf].compute_at(s[C_buf], cb_m)
+
 # s[C_buf].compute_at(s[Exp_buf], s[Exp_buf].op.axis[1])
 
 s[A_buf].set_scope("local.acc_buffer")
 s[C_buf].set_scope("local.acc_buffer")
-# s[Exp_buf].set_scope("local.acc_buffer")
-# s[Exp_buf_sum].set_scope("local.acc_buffer")
-# s[Soft_max].set_scope("local.acc_buffer")
+s[Exp_buf].set_scope("local.acc_buffer")
+s[Exp_buf_sum].set_scope("local.acc_buffer")
+s[Soft_max].set_scope("local.acc_buffer")
 
 
+sum_ob, sum_m, sum_bi, sum_ti = s[Exp_buf_sum].op.axis
+s[Exp_buf_sum].reorder(k3, sum_ob, sum_m, sum_bi, k4, sum_ti)
+s[Exp_buf_sum].tensorize(sum_bi, env.pool_sum)
 
-
-
-# sum_ob, sum_m, sum_bi, sum_ti = s[Exp_buf_sum].op.axis
-# s[Exp_buf_sum].reorder(k3, sum_ob, sum_m, sum_bi, k4, sum_ti)
-# s[Exp_buf_sum].tensorize(sum_bi, env.pool_sum)
-
+s[Exp_buf].pragma(Exp_buf.op.axis[0], "alu")
 
 s[A_buf].pragma(s[A_buf].op.axis[0], "dma_copy")
-s[C].pragma(s[C].op.axis[0], "dma_copy")
-# s[Exp_buf].pragma(Exp_buf.op.axis[0], "alu")
-# s[Soft_max].pragma(Soft_max.op.axis[0], "alu")
+s[C].pragma(s[C].op.axis[2], "dma_copy")
+
+s[Soft_max].pragma(Soft_max.op.axis[0], "alu")
 
 
-tvm.lower(s, [A, C], simple_mode=True)
+print(tvm.lower(s, [A, C], simple_mode=True))
 
 # with my_build_config():
 #     # Let's take a look at the finalized schedule
