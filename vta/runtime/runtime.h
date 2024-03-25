@@ -227,6 +227,24 @@ TVM_DLL int VTAPushGEMMOp(void** uop_handle, int (*finit)(void*), void* signatur
 TVM_DLL int VTAPushALUOp(void** uop_handle, int (*finit)(void*), void* signature, int nbytes);
 
 /*!
+ * \brief Push ALU uop kernel into the command handle.
+ * \param uop_handle The uop cache handle.
+ * \param finit The initalization function to initialize uop.
+ * \param signature The closure arguments of the finit.
+ * \param nbytes Number of bytes to in the closure arguments.
+ * \return 0 if success.
+ */
+TVM_DLL int VTAPushReduceOp(void** uop_handle, int (*finit)(void*), void* signature, int nbytes);
+/*!
+ * \brief Push ALU reduce uop kernel into the command handle.
+ * \param uop_handle The uop cache handle.
+ * \param finit The initalization function to initialize uop.
+ * \param signature The closure arguments of the finit.
+ * \param nbytes Number of bytes to in the closure arguments.
+ * \return 0 if success.
+ */
+TVM_DLL int VTAPushReduceOpReset(void** uop_handle, int (*finit)(void*), void* signature, int nbytes);
+/*!
  * \brief Push dependence token.
  * \param cmd The VTA command handle.
  * \param from_qid The source queue.

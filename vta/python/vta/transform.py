@@ -109,7 +109,7 @@ def FoldUopLoop():
                 stmt.attr_key == "coproc_uop_scope"
                 and isinstance(stmt.value, tvm.tir.StringImm)
                 and (stmt.value.value == env.dev.vta_push_uop.value or
-                     stmt.value.value == "VTAPushReduceOp")
+                     stmt.value.value == "VTAPushReduceOp" or stmt.value.value == "VTAPushReduceOpReset")
         ):
             body = stmt.body
             begins = []

@@ -189,12 +189,31 @@ s[Soft_max].pragma(Soft_max.op.axis[0], "alu")
 
 print(tvm.lower(s, [A, C], simple_mode=True))
 
-# with my_build_config():
-#     # Let's take a look at the finalized schedule
-#     print(tvm.lower(s, [A, C], simple_mode=True))
 
 print(vta.lower(s, [A, C], simple_mode=True))
 
-# my_vmax = vta.build(
-#     s, [A, C], tvm.target.Target("ext_dev", host="llvm")
-# )
+my_softmax = vta.build(s, [A, C],
+                       tvm.target.Target("ext_dev", host=env.target_host))
+
+temp = "./"
+my_softmax.save(os.path.join(temp, "softmax.o"))
+
+remote.upload(os.path.join(temp, "softmax.o"))
+
+f = remote.load_module(os.path.join(temp, "softmax.o"))
+
+env = vta.get_env()
+
+ctx = remote.ext_dev(0)
+
+A_orig = np.random.randint(-128, 128, size=(ob, m, v, env.BATCH, env.BLOCK_OUT)).astype(A.dtype)
+
+A_nd = tvm.nd.array(A_orig, ctx)
+C_nd = tvm.nd.array(np.zeros((ob, m, v, env.BATCH, env.BLOCK_OUT)).astype(C.dtype), ctx)
+
+if env.TARGET in ["sim", "tsim"]:
+    simulator.clear_stats()
+
+f(A_nd, C_nd)
+
+print('finish compute')

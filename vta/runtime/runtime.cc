@@ -905,7 +905,7 @@ class InsnQueue : public BaseQueue<VTAGenericInsn> {
   void CommitPendingPop(int stage) {
     // Handle the LD<->compute queue
     // NOTE: pop executes on target(stage)
-    CHECK(stage > 0 && stage < 4);
+    CHECK(stage > 0 && stage < 6);
     if (pending_pop_prev_[stage] || pending_pop_next_[stage]) {
       PushNoop(stage, false, false, pending_pop_prev_[stage], pending_pop_next_[stage]);
       pending_pop_prev_[stage] = 0;
@@ -1039,7 +1039,8 @@ class CommandQueue {
     CHECK(device_ != nullptr);
   }
 
-  ~CommandQueue() { VTADeviceFree(device_); }
+  ~CommandQueue() {
+      VTADeviceFree(device_); }
 
   uint32_t GetElemBytes(uint32_t memory_id) {
     uint32_t elem_bytes = 0;
@@ -1128,9 +1129,13 @@ class CommandQueue {
     this->CheckInsnOverFlow();
   }
 
-  void DepPush(int from_qid, int to_qid) { insn_queue_.DepPush(from_qid, to_qid); }
+  void DepPush(int from_qid, int to_qid) {
+      insn_queue_.DepPush(from_qid, to_qid);
+  }
 
-  void DepPop(int from_qid, int to_qid) { insn_queue_.DepPop(from_qid, to_qid); }
+  void DepPop(int from_qid, int to_qid) {
+      insn_queue_.DepPop(from_qid, to_qid);
+  }
 
   void ReadBarrier(void* buffer, uint32_t elem_bits, uint32_t start, uint32_t extent) {
     if (!(debug_flag_ & VTA_DEBUG_SKIP_READ_BARRIER)) {
@@ -1475,13 +1480,31 @@ int VTAPushALUOp(void** uop_handle, int (*finit)(void*), void* signature, int nb
 //    printf("leave push alu op\n");
   return 0;
 }
+int VTAPushReduceOp(void** uop_handle, int (*finit)(void*), void* signature, int nbytes){
+    vta::CommandQueue::ThreadLocal()->PushALUUop(uop_handle, finit, signature, nbytes);
+}
+int VTAPushReduceOpReset(void** uop_handle, int (*finit)(void*), void* signature, int nbytes){
+    vta::CommandQueue::ThreadLocal()->PushALUUop(uop_handle, finit, signature, nbytes);
+}
 
 int VTADepPush(VTACommandHandle cmd, int from_qid, int to_qid) {
+    if (from_qid==5 && to_qid==4)
+        return 0;
+    if(from_qid==4 && to_qid==5)
+        return 0;
+    if (from_qid==2 && to_qid==5)
+        return 0;
   static_cast<vta::CommandQueue*>(cmd)->DepPush(from_qid, to_qid);
   return 0;
 }
 
 int VTADepPop(VTACommandHandle cmd, int from_qid, int to_qid) {
+    if (from_qid==5 && to_qid==4)
+        return 0;
+    if(from_qid==4 && to_qid==5)
+        return 0;
+    if (from_qid==2 && to_qid==5)
+        return 0;
   static_cast<vta::CommandQueue*>(cmd)->DepPop(from_qid, to_qid);
   return 0;
 }
