@@ -76,6 +76,9 @@ class DevContext(object):
     ALU_OPCODE_SUB = 5
     ALU_OPCODE_EXP_SUB = 6
     ALU_OPCODE_DIV = 7
+    # VTA Reduce Opcodes
+    REDUCE_OPCODE_RMAX = 0
+    REDUCE_OPCODE_RSUM = 1
     # Task queue id (pipeline stage)
     QID_LOAD_INP = 1
     QID_LOAD_WGT = 1

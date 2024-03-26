@@ -122,6 +122,8 @@
 #define VTA_OPCODE_FINISH 3
 /*! Opcode: ALU encoding */
 #define VTA_OPCODE_ALU 4
+/*! Opcode: Reduce encoding */
+#define VTA_OPCODE_REDUCE 5
 
 /*! ALU opcode: unary min op */
 #define VTA_ALU_OPCODE_MIN 0
@@ -133,6 +135,16 @@
 #define VTA_ALU_OPCODE_SHR 3
 /*! ALU opcode: mul */
 #define VTA_ALU_OPCODE_MUL 4
+/*! ALU opcode: sub */
+#define VTA_ALU_OPCODE_SUB 5
+/*! ALU opcode: exp_sub */
+#define VTA_ALU_OPCODE_EXP_SUB 6
+/*! ALU opcode: div */
+#define VTA_ALU_OPCODE_DIV 7
+/*! ALU Reduce opcode : reduce max */
+#define VTA_REDUCE_OPCODE_RMAX 0
+/*! ALU Reduce opcode : reduce sum */
+#define VTA_REDUCE_OPCODE_RSUM 1
 
 /*! Memory type field bitwidth */
 #define VTA_MEMOP_ID_BIT_WIDTH 3

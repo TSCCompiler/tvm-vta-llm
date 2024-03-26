@@ -68,25 +68,26 @@ def alu_intri(env, optype='max', mock=True):
             dev = env.dev
 
             if index in (0, 2):
-                irb.scope_attr(dev.vta_axis, "coproc_scope", 4)
+                irb.scope_attr(dev.vta_axis, "coproc_scope", 5)
                 irb.scope_attr(dev.vta_axis, "coproc_uop_scope", dev.vta_push_reduce_uop)
+                v_opcode = env.dev.REDUCE_OPCODE_RMAX if optype == 'max' else env.dev.REDUCE_OPCODE_RSUM
                 irb.emit(
                     tvm.tir.call_intrin(
                         "int32",
                         "tir.vta.uop_push",
-                        0,
+                        2,
                         0,
                         dout.access_ptr("rw", "int32"),
                         dinp.access_ptr("r", "int32"),
                         0,
-                        0,
+                        v_opcode,
                         0,
                         0,
                     )
                 )
                 return irb.get()
             else:
-                irb.scope_attr(dev.vta_axis, "coproc_scope", 5)
+                irb.scope_attr(dev.vta_axis, "coproc_scope", 4)
                 irb.scope_attr(dev.vta_axis, "coproc_uop_scope", dev.vta_push_reduce_reset_uop)
                 irb.emit(
                     tvm.tir.call_intrin(
