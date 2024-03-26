@@ -10,5 +10,5 @@ include(cmake/VTA.cmake)
 add_subdirectory(hardware/chisel)
 #add_subdirectory(apps/verilator/add)
 #add_subdirectory(apps/verilator/MAC)
-#add_subdirectory(apps/deploy)
+add_subdirectory(apps/deploy)
 
