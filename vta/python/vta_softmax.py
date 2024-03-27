@@ -144,16 +144,14 @@ Exp_buf_sum = te.compute((ob, m, env.BATCH, env.BLOCK_OUT),
 Soft_max = te.compute((ob, m, v, env.BATCH, env.BLOCK_OUT),
                       lambda obi, mi, vi, bi, ti: Exp_buf(obi, mi, vi, bi, ti) // Exp_buf_sum(obi, mi, bi, ti))
 
-C = te.compute((ob, m, v, env.BATCH, env.BLOCK_OUT), lambda *i: Soft_max(*i), "C")
-# C = te.compute((ob, m, env.BATCH, env.BLOCK_OUT), lambda *i: Exp_buf_sum(*i), "C")
+C = te.compute((ob, m, v, env.BATCH, env.BLOCK_OUT), lambda *i: Soft_max(*i).astype(env.inp_dtype), "C")
+# C = te.compute((ob, m, env.BATCH, env.BLOCK_OUT), lambda *i: Exp_buf_sum(*i).astype(env.inp_dtype), "C")
 
 s = te.create_schedule(C.op)
 
 print(tvm.lower(s, [A, C], simple_mode=True))
 llvm_module = tvm.build(s, [A, C], tvm.target.Target("llvm", host=env.target_host))
 
-# s[A_buf].compute_at(s[Exp_buf], s[Exp_buf].op.axis[1])
-# s[C_buf].compute_at(s[Exp_buf], s[Exp_buf].op.axis[1])
 
 s[A_buf].compute_at(s[C], s[C].op.axis[1])
 s[C_buf].compute_at(s[C], s[C].op.axis[1])
@@ -161,15 +159,11 @@ s[Exp_buf].compute_at(s[C], s[C].op.axis[1])
 s[Exp_buf_sum].compute_at(s[C], s[C].op.axis[1])
 s[Soft_max].compute_at(s[C], s[C].op.axis[1])
 
-# print(tvm.lower(s, [A, C], simple_mode=True))
 cb_b, cb_m, cb_bi, cb_ti = s[C_buf].op.axis
 
-# s[A_buf].compute_at(s[C_buf], k1)
-# s[C_buf].reorder(cb_b, cb_m, k1, k2, cb_ti)
 s[C_buf].reorder(cb_m, k1, cb_b, cb_bi, k2, cb_ti)
 s[C_buf].tensorize(cb_bi, env.aluc)
 
-# s[C_buf].compute_at(s[Exp_buf], s[Exp_buf].op.axis[1])
 
 s[A_buf].set_scope("local.acc_buffer")
 s[C_buf].set_scope("local.acc_buffer")

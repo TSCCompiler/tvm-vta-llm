@@ -984,6 +984,7 @@ class InsnQueue : public BaseQueue<VTAGenericInsn> {
   static PipelineStage GetPipelineStage(VTAMemInsn* insn) {
     if (insn->opcode == VTA_OPCODE_GEMM) return kComputeStage;
     if (insn->opcode == VTA_OPCODE_ALU) return kComputeStage;
+      if (insn->opcode == VTA_OPCODE_REDUCE) return kComputeStage;
     if (insn->opcode == VTA_OPCODE_LOAD) {
       if (insn->x_size == 0) return kNoneStage;
       if (insn->memory_type == VTA_MEM_ID_ACC || insn->memory_type == VTA_MEM_ID_ACC_8BIT)
@@ -997,7 +998,7 @@ class InsnQueue : public BaseQueue<VTAGenericInsn> {
       //        checking the memory_type to avoid an CHECK error...
       return kStoreStage;
     }
-    LOG(FATAL) << "not reached";
+    LOG(FATAL) << "not reached " << insn->opcode;
     return kNoneStage;
   }
 
