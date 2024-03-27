@@ -1555,7 +1555,7 @@ int VTAPushReduceOp(void** uop_handle, int (*finit)(void*), void* signature, int
     return 0;
 }
 int VTAPushReduceOpReset(void** uop_handle, int (*finit)(void*), void* signature, int nbytes){
-    vta::CommandQueue::ThreadLocal()->PushGEMMOp(uop_handle, finit, signature, nbytes);
+    vta::CommandQueue::ThreadLocal()->PushReduceUop(uop_handle, finit, signature, nbytes);
     return 0;
 }
 

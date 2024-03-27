@@ -135,7 +135,7 @@ C_buf = te.compute(
     lambda obi, mi, bi, ti: te.max(A_buf(obi, mi, k1, bi, k2), axis=[k1, k2]), "C_buf"
 )
 Exp_buf = te.compute((ob, m, v, env.BATCH, env.BLOCK_OUT),
-                     lambda obi, mi, vi, bi, tnsi: te.exp(A_buf(obi, mi, vi, bi, tnsi) - C_buf(obi, mi, bi, tnsi)),
+                     lambda obi, mi, vi, bi, tnsi: A_buf(obi, mi, vi, bi, tnsi) - C_buf(obi, mi, bi, tnsi),
                      "Exp_buf")
 
 Exp_buf_sum = te.compute((ob, m, env.BATCH, env.BLOCK_OUT),
@@ -148,6 +148,9 @@ C = te.compute((ob, m, v, env.BATCH, env.BLOCK_OUT), lambda *i: Soft_max(*i), "C
 # C = te.compute((ob, m, env.BATCH, env.BLOCK_OUT), lambda *i: Exp_buf_sum(*i), "C")
 
 s = te.create_schedule(C.op)
+
+print(tvm.lower(s, [A, C], simple_mode=True))
+llvm_module = tvm.build(s, [A, C], tvm.target.Target("llvm", host=env.target_host))
 
 # s[A_buf].compute_at(s[Exp_buf], s[Exp_buf].op.axis[1])
 # s[C_buf].compute_at(s[Exp_buf], s[Exp_buf].op.axis[1])
@@ -187,8 +190,6 @@ s[C].pragma(s[C].op.axis[2], "dma_copy")
 s[Soft_max].pragma(Soft_max.op.axis[0], "alu")
 
 
-print(tvm.lower(s, [A, C], simple_mode=True))
-
 
 print(vta.lower(s, [A, C], simple_mode=True))
 
@@ -206,14 +207,29 @@ env = vta.get_env()
 
 ctx = remote.ext_dev(0)
 
+dev = tvm.device('cpu', 0)
+
 A_orig = np.random.randint(-128, 128, size=(ob, m, v, env.BATCH, env.BLOCK_OUT)).astype(A.dtype)
 
 A_nd = tvm.nd.array(A_orig, ctx)
 C_nd = tvm.nd.array(np.zeros((ob, m, v, env.BATCH, env.BLOCK_OUT)).astype(C.dtype), ctx)
+Aref_nd = tvm.nd.array(A_orig, dev)
+Cref_nd = tvm.nd.array(np.zeros((ob, m, v, env.BATCH, env.BLOCK_OUT)).astype(C.dtype), dev)
 
 if env.TARGET in ["sim", "tsim"]:
     simulator.clear_stats()
 
 f(A_nd, C_nd)
+
+print('begin to infer with cpu')
+llvm_module(Aref_nd, Cref_nd)
+
+np.testing.assert_equal(Cref_nd.numpy(), C_nd.numpy())
+# Print stats
+if env.TARGET in ["sim", "tsim"]:
+    sim_stats = simulator.stats()
+    print("Execution statistics:")
+    for k, v in sim_stats.items():
+        print("\t{:<16}: {:>16}".format(k, v))
 
 print('finish compute')
