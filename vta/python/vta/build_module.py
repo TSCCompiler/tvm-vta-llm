@@ -103,12 +103,16 @@ def build_config(debug_flag=0, **kwargs):
         (1, transform.LiftAllocToScopeBegin()),
         (1, _DebugDump('after_liftAllocToScopeBegin.py', Path('./'))),
         (1, tvm.tir.transform.LiftAttrScope("coproc_scope")),
+        (1, _DebugDump("after_coproc_scope.py", Path('./'))),
         (1, transform.InjectCoProcSync()),
+        (1, _DebugDump("after_InjectCoProcSync.py", Path('./'))),
         (1, EarlyRewrite()),
+        (1, _DebugDump("after_EarlyRewrite.py", Path('./'))),
     ]
     if debug_flag:
         pass_list.append((1, add_debug))
     pass_list.append((2, transform.InjectALUIntrin()))
+    pass_list.append((2, _DebugDump("after_InjectALUIntrin.py", Path("./"))))
     pass_list.append((3, tvm.tir.transform.LowerDeviceStorageAccessInfo()))
     pass_list.append((3, transform.FoldUopLoop()))
     pass_list.append((3, _DebugDump("after_FoldUopFor.py", Path("./"))))

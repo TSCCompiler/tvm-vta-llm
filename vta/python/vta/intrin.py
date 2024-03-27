@@ -20,18 +20,28 @@ from __future__ import absolute_import as _abs
 import tvm
 from tvm import te
 
-def alu_intri(env, mock=True):
-    inp = te.placeholder((16,), dtype="int%d" % env.ACC_WIDTH, name=env.acc_scope)
+
+def alu_intri(env, optype='max', mock=True):
+    inp = te.placeholder((env.BATCH, env.BLOCK_OUT), dtype="int%d" % env.ACC_WIDTH, name=env.acc_scope)
     # out = te.placeholder((16), dtype="int%d" % env.ACC_WIDTH, name=env.acc_scope)
     out_dtype = "int%d" % env.ACC_WIDTH
-    k = te.reduce_axis((0, 16), name='k')
-    out = te.compute(
-        (16,),
-        lambda i: te.max(inp(k).astype(out_dtype), axis=[k]),
-        name='out',
-    )
+    k = te.reduce_axis((0, env.BLOCK_OUT), name='k')
+    if optype == 'max':
+        out = te.compute(
+            (env.BATCH, env.BLOCK_OUT),
+            lambda bi, i: te.max(inp(bi, k).astype(out_dtype), axis=[k]),
+            name='out',
+        )
+    elif optype == "sum":
+        out = te.compute(
+            (env.BATCH, env.BLOCK_OUT),
+            lambda bi, i: te.sum(inp(bi, k).astype(out_dtype), axis=[k]),
+            name='out',
+        )
+    else:
+        raise RuntimeError("not supported " + str(optype))
     inp_layout = tvm.tir.decl_buffer(
-        (16,),
+        (env.BATCH, env.BLOCK_OUT),
         inp.dtype,
         env.acc_scope,
         scope=env.acc_scope,
@@ -57,45 +67,48 @@ def alu_intri(env, mock=True):
             irb = tvm.tir.ir_builder.create()
             dev = env.dev
 
-
             if index in (0, 2):
-                irb.scope_attr(dev.vta_axis, "coproc_scope", 5)
+                irb.scope_attr(dev.vta_axis, "coproc_scope", 2)
                 irb.scope_attr(dev.vta_axis, "coproc_uop_scope", dev.vta_push_reduce_uop)
+                v_opcode = env.dev.REDUCE_OPCODE_RMAX if optype == 'max' else env.dev.REDUCE_OPCODE_RSUM
                 irb.emit(
                     tvm.tir.call_intrin(
                         "int32",
                         "tir.vta.uop_push",
-                        0,
+                        2,
                         0,
                         dout.access_ptr("rw", "int32"),
                         dinp.access_ptr("r", "int32"),
                         0,
-                        0,
+                        v_opcode,
                         0,
                         0,
                     )
                 )
                 return irb.get()
             else:
-                irb.scope_attr(dev.vta_axis, "coproc_scope", 4)
-                irb.scope_attr(dev.vta_axis, "coproc_uop_scope", dev.vta_push_uop)
+                irb.scope_attr(dev.vta_axis, "coproc_scope", 2)
+                irb.scope_attr(dev.vta_axis, "coproc_uop_scope", dev.vta_push_reduce_reset_uop)
+                imm_value = 0
+                if optype == 'max':
+                    imm_value = -32768
                 irb.emit(
                     tvm.tir.call_intrin(
                         "int32",
                         "tir.vta.uop_push",
-                        0,
+                        2,
                         1,
                         dout.access_ptr("rw", "int32"),
                         0,
                         0,
                         0,
-                        0,
-                        0,
+                        1,
+                        imm_value,
                     )
                 )
                 return irb.get()
 
-        return (instr(0), instr(1), instr(2))
+        return instr(0), instr(1), instr(2)
 
     return te.decl_tensor_intrin(
         out.op, intrin_func, name='aluc', binds={inp: inp_layout, out: out_layout}

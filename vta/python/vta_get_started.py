@@ -225,6 +225,8 @@ C_buf = te.compute(
 # input activation data format.
 
 # Cast to output type, and send to main memory
+print(env.inp_dtype)
+print(env.acc_dtype)
 C = te.compute(
     (o, m, env.BATCH, env.BLOCK_OUT), lambda *i: C_buf(*i).astype(env.inp_dtype), name="C"
 )
@@ -413,6 +415,7 @@ B_packed = B_orig.reshape(o, env.BATCH, m, env.BLOCK_OUT).transpose((0, 2, 1, 3)
 # Format the input/output arrays with tvm.nd.array to the DLPack standard
 A_nd = tvm.nd.array(A_packed, ctx)
 B_nd = tvm.nd.array(B_packed, ctx)
+print(C.dtype)
 C_nd = tvm.nd.array(np.zeros((o, m, env.BATCH, env.BLOCK_OUT)).astype(C.dtype), ctx)
 
 if env.TARGET in ["sim", "tsim"]:

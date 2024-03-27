@@ -31,6 +31,7 @@
 #include <unordered_map>
 #include <cstring>
 #include <sstream>
+#include <math.h>
 
 #include "../vmem/virtual_memory.h"
 
@@ -347,6 +348,9 @@ class Device {
       case VTA_OPCODE_STORE: device->RunStore(mem); break;
       case VTA_OPCODE_GEMM: device->RunGEMM(gem); break;
       case VTA_OPCODE_ALU: device->RunALU(alu); break;
+        case VTA_OPCODE_REDUCE:
+            device->RunReduce(alu);
+            break;
       case VTA_OPCODE_FINISH: ++(device->finish_counter_); break;
       default: {
         LOG(FATAL) << "Unknown op_code" << mem->opcode;
@@ -458,6 +462,33 @@ class Device {
       RunALU_<false>(op);
     }
   }
+  void RunReduce(const VTAAluInsn* op) {
+      RunReduce_(op);
+//      if (op->use_imm){
+//          LOG(FATAL) << "not support imm reduce ";
+//      } else {
+//          RunReduce_(op);
+//
+//      }
+  }
+
+  void RunReduce_(const VTAAluInsn* op){
+      switch (op->alu_opcode) {
+          case VTA_REDUCE_OPCODE_RMAX:{
+              return RunReduceLoop(op, [](int32_t x, int32_t y){
+                  return x < y ? y : x;
+              });
+          }
+          case VTA_REDUCE_OPCODE_RSUM:{
+              return RunReduceLoop(op, [](int32_t x, int32_t y){
+                  return x+y;
+              });
+          }
+          default:
+              LOG(FATAL) << "not supported reduce opcode : " << op->alu_opcode;
+      }
+
+  }
 
   template<bool use_imm>
   void RunALU_(const VTAAluInsn* op) {
@@ -491,10 +522,82 @@ class Device {
             return x * y;
           });
       }
+        case VTA_ALU_OPCODE_SUB: {
+            return RunALULoop<use_imm>(op, [](int32_t x, int32_t y){
+                return x-y;
+            });
+        }
+        case VTA_ALU_OPCODE_EXP_SUB: {
+            return RunALULoop<use_imm>(op, [](int32_t x, int32_t y){
+               return (int32_t)std::exp(x-y) ;
+            });
+        }
+        case VTA_ALU_OPCODE_DIV: {
+            return RunALULoop<use_imm>(op, [](int32_t x, int32_t y){
+                return x / y;
+            });
+        }
       default: {
         LOG(FATAL) << "Unknown ALU code " << op->alu_opcode;
       }
     }
+  }
+
+  template<typename F>
+  void RunReduceLoop(const VTAAluInsn* op, F func){
+      prof_->alu_counter += op->iter_out * op->iter_in * (op->uop_end - op->uop_bgn);
+      if (prof_->SkipExec()) return;
+      if (op->reset_reg){
+          for (int y = 0; y < op->iter_out; ++y) {
+              for (int x = 0; x < op->iter_in; ++x) {
+                  for (int k = op->uop_bgn; k < op->uop_end; ++k) {
+                      // Read micro op
+                      VTAUop *uop_ptr = static_cast<VTAUop *>(uop_.BeginPtr(k));
+                      uint32_t dst_index = uop_ptr->dst_idx;
+                      uint32_t src_index = uop_ptr->src_idx;
+                      dst_index += y * op->dst_factor_out + x * op->dst_factor_in;
+                      src_index += y * op->src_factor_out + x * op->src_factor_in;
+                      BitPacker<VTA_ACC_WIDTH> dst(acc_.BeginPtr(dst_index));
+                      BitPacker<VTA_ACC_WIDTH> src(acc_.BeginPtr(src_index));
+                      for(int bi = 0; bi < VTA_BATCH; ++bi){
+                          for(int kii = 0; kii < VTA_BLOCK_OUT; ++kii){
+                              if (op->use_imm){
+                                  dst.SetSigned(kii, (int32_t)(op->imm));
+                              } else {
+                                  dst.SetSigned(kii, 0);
+                              }
+
+                          }
+                      }
+                  }// end k
+              }// end x
+          }//end y
+
+      } else {
+          for (int y = 0; y < op->iter_out; ++y) {
+              for (int x = 0; x < op->iter_in; ++x) {
+                  for (int k = op->uop_bgn; k < op->uop_end; ++k) {
+                      // Read micro op
+                      VTAUop *uop_ptr = static_cast<VTAUop *>(uop_.BeginPtr(k));
+                      uint32_t dst_index = uop_ptr->dst_idx;
+                      uint32_t src_index = uop_ptr->src_idx;
+                      dst_index += y * op->dst_factor_out + x * op->dst_factor_in;
+                      src_index += y * op->src_factor_out + x * op->src_factor_in;
+                      BitPacker<VTA_ACC_WIDTH> dst(acc_.BeginPtr(dst_index));
+                      BitPacker<VTA_ACC_WIDTH> src(acc_.BeginPtr(src_index));
+                      for(int bi = 0; bi < VTA_BATCH; ++bi){
+                          for(int kii = 0; kii < VTA_BLOCK_OUT; ++kii){
+                              for(int ki = 0; ki < VTA_BLOCK_OUT; ++ki){
+                                  dst.SetSigned(kii, func(dst.GetSigned(kii), src.GetSigned(ki)));
+                              }
+                          }
+                      }
+                  }// end k
+              }// end x
+          }//end y
+      }
+
+
   }
 
   template<bool use_imm, typename F>

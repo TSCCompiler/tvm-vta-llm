@@ -341,6 +341,17 @@ class UopKernel {
         CHECK(imm_val_ == imm_val);
       }
     }
+    else if(mode == 2){
+        if (opcode_ == 0xFFFFFFFF){
+            opcode_ = opcode;
+            use_imm_ = use_imm;
+            imm_val_ = imm_val;
+        }else{
+            CHECK(opcode_ == opcode);
+            CHECK(use_imm_ == use_imm);
+            CHECK(imm_val_ == imm_val);
+        }
+    }
   }
   /*! \brief Dump kernel micro ops to stdout. */
   void Dump() {
@@ -905,7 +916,7 @@ class InsnQueue : public BaseQueue<VTAGenericInsn> {
   void CommitPendingPop(int stage) {
     // Handle the LD<->compute queue
     // NOTE: pop executes on target(stage)
-    CHECK(stage > 0 && stage < 4);
+    CHECK(stage > 0 && stage < 6);
     if (pending_pop_prev_[stage] || pending_pop_next_[stage]) {
       PushNoop(stage, false, false, pending_pop_prev_[stage], pending_pop_next_[stage]);
       pending_pop_prev_[stage] = 0;
@@ -973,6 +984,7 @@ class InsnQueue : public BaseQueue<VTAGenericInsn> {
   static PipelineStage GetPipelineStage(VTAMemInsn* insn) {
     if (insn->opcode == VTA_OPCODE_GEMM) return kComputeStage;
     if (insn->opcode == VTA_OPCODE_ALU) return kComputeStage;
+      if (insn->opcode == VTA_OPCODE_REDUCE) return kComputeStage;
     if (insn->opcode == VTA_OPCODE_LOAD) {
       if (insn->x_size == 0) return kNoneStage;
       if (insn->memory_type == VTA_MEM_ID_ACC || insn->memory_type == VTA_MEM_ID_ACC_8BIT)
@@ -986,7 +998,7 @@ class InsnQueue : public BaseQueue<VTAGenericInsn> {
       //        checking the memory_type to avoid an CHECK error...
       return kStoreStage;
     }
-    LOG(FATAL) << "not reached";
+    LOG(FATAL) << "not reached " << insn->opcode;
     return kNoneStage;
   }
 
@@ -1020,8 +1032,8 @@ class InsnQueue : public BaseQueue<VTAGenericInsn> {
 
  private:
   // Pending pop of each isntruction queue, qid=0 is not used
-  int pending_pop_prev_[4];
-  int pending_pop_next_[4];
+  int pending_pop_prev_[6];
+  int pending_pop_next_[6];
   static constexpr int kElemBytes = sizeof(VTAGenericInsn);
   static constexpr int kMaxElems = kMaxBytes / kElemBytes;
 };
@@ -1039,7 +1051,8 @@ class CommandQueue {
     CHECK(device_ != nullptr);
   }
 
-  ~CommandQueue() { VTADeviceFree(device_); }
+  ~CommandQueue() {
+      VTADeviceFree(device_); }
 
   uint32_t GetElemBytes(uint32_t memory_id) {
     uint32_t elem_bytes = 0;
@@ -1128,9 +1141,13 @@ class CommandQueue {
     this->CheckInsnOverFlow();
   }
 
-  void DepPush(int from_qid, int to_qid) { insn_queue_.DepPush(from_qid, to_qid); }
+  void DepPush(int from_qid, int to_qid) {
+      insn_queue_.DepPush(from_qid, to_qid);
+  }
 
-  void DepPop(int from_qid, int to_qid) { insn_queue_.DepPop(from_qid, to_qid); }
+  void DepPop(int from_qid, int to_qid) {
+      insn_queue_.DepPop(from_qid, to_qid);
+  }
 
   void ReadBarrier(void* buffer, uint32_t elem_bits, uint32_t start, uint32_t extent) {
     if (!(debug_flag_ & VTA_DEBUG_SKIP_READ_BARRIER)) {
@@ -1235,6 +1252,24 @@ class CommandQueue {
     this->PushALUUop(static_cast<UopKernel*>(kptr[0]));
     this->CheckInsnOverFlow();
   }
+  void PushReduceUop(void** uop_handle, int (*finit)(void*), void* signature, int nbytes){
+      UopKernelMap** uptr = reinterpret_cast<UopKernelMap**>(uop_handle);
+      if (uptr[0] == nullptr) {
+          uptr[0] = new UopKernelMap();
+      }
+      UopKernel** kptr = uptr[0]->Get(signature, nbytes);
+      if (kptr[0] == nullptr) {
+          record_kernel_ = new UopKernel(static_cast<char*>(signature), nbytes);
+          CHECK_EQ((*finit)(signature), 0);
+          kptr[0] = static_cast<UopKernel*>(record_kernel_);
+          if (debug_flag_ & VTA_DEBUG_DUMP_UOP) {
+              record_kernel_->Dump();
+          }
+          record_kernel_ = nullptr;
+      }
+      this->PushReduceUop(static_cast<UopKernel*>(kptr[0]));
+      this->CheckInsnOverFlow();
+  }
 
   static std::shared_ptr<CommandQueue>& ThreadLocal() {
     static std::shared_ptr<CommandQueue> inst = std::make_shared<CommandQueue>();
@@ -1325,6 +1360,47 @@ class CommandQueue {
       insn->src_factor_in = loop[1].src_factor;
     }
   }
+    // Push ALU uop to the command buffer
+    void PushReduceUop(UopKernel* kernel) {
+        uop_queue_.Push(kernel, [this]() { this->AutoSync(); });
+        if (uop_queue_.pending()) {
+            VTAMemInsn* insn = insn_queue_.CreateMemInsn(VTA_MEM_ID_UOP);
+            insn->opcode = VTA_OPCODE_LOAD;
+            uop_queue_.FlushUopLoad(insn);
+        }
+        VTAAluInsn* insn = insn_queue_.CreateAluInsn();
+        insn->opcode = VTA_OPCODE_REDUCE;
+        insn->reset_reg = kernel->reset_out_;
+        insn->uop_bgn = kernel->sram_begin_;
+        insn->uop_end = kernel->sram_end_;
+        insn->alu_opcode = kernel->opcode_;
+        insn->use_imm = kernel->use_imm_;
+        insn->imm = kernel->imm_val_;
+        const std::vector<UopKernel::LoopEntry>& loop = kernel->loop();
+        if (loop.size() == 0) {
+            insn->iter_out = 1;
+            insn->dst_factor_out = 0;
+            insn->src_factor_out = 0;
+            insn->iter_in = 1;
+            insn->dst_factor_in = 0;
+            insn->src_factor_in = 0;
+        } else if (loop.size() == 1) {
+            insn->iter_out = 1;
+            insn->dst_factor_out = 0;
+            insn->src_factor_out = 0;
+            insn->iter_in = loop[0].extent;
+            insn->dst_factor_in = loop[0].dst_factor;
+            insn->src_factor_in = loop[0].src_factor;
+        } else {
+            insn->iter_out = loop[0].extent;
+            insn->dst_factor_out = loop[0].dst_factor;
+            insn->src_factor_out = loop[0].src_factor;
+            insn->iter_in = loop[1].extent;
+            insn->dst_factor_in = loop[1].dst_factor;
+            insn->src_factor_in = loop[1].src_factor;
+        }
+    }
+
 
   void CheckInsnOverFlow() {
     // At each API call, we can at most commit:
@@ -1475,13 +1551,33 @@ int VTAPushALUOp(void** uop_handle, int (*finit)(void*), void* signature, int nb
 //    printf("leave push alu op\n");
   return 0;
 }
+int VTAPushReduceOp(void** uop_handle, int (*finit)(void*), void* signature, int nbytes){
+    vta::CommandQueue::ThreadLocal()->PushReduceUop(uop_handle, finit, signature, nbytes);
+    return 0;
+}
+int VTAPushReduceOpReset(void** uop_handle, int (*finit)(void*), void* signature, int nbytes){
+    vta::CommandQueue::ThreadLocal()->PushReduceUop(uop_handle, finit, signature, nbytes);
+    return 0;
+}
 
 int VTADepPush(VTACommandHandle cmd, int from_qid, int to_qid) {
+//    if (from_qid==5 && to_qid==4)
+//        return 0;
+//    if(from_qid==4 && to_qid==5)
+//        return 0;
+//    if (from_qid==2 && to_qid==5)
+//        return 0;
   static_cast<vta::CommandQueue*>(cmd)->DepPush(from_qid, to_qid);
   return 0;
 }
 
 int VTADepPop(VTACommandHandle cmd, int from_qid, int to_qid) {
+//    if (from_qid==5 && to_qid==4)
+//        return 0;
+//    if(from_qid==4 && to_qid==5)
+//        return 0;
+//    if (from_qid==2 && to_qid==5)
+//        return 0;
   static_cast<vta::CommandQueue*>(cmd)->DepPop(from_qid, to_qid);
   return 0;
 }

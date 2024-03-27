@@ -82,7 +82,6 @@ from vta.testing.simulator import load_module_with_lib, load_module_sim
 from vta.libinfo import find_libvta
 from my_vta_pipeline import my_build_config
 
-
 # We read the Pynq RPC host IP address and port number from the OS environment
 host = os.environ.get("VTA_RPC_HOST", "192.168.6.200")
 port = int(os.environ.get("VTA_RPC_PORT", "9091"))
@@ -107,15 +106,18 @@ if env.TARGET == "pynq" or env.TARGET == "de10nano":
 elif env.TARGET in ("sim", "tsim", "intelfocl"):
     remote = rpc.LocalSession()
 
+
     @tvm._ffi.register_func("tvm.rpc.server.load_module", override=True)
     def load_module(file_name):
         return load_module_sim(file_name)
+
 
     if env.TARGET in ["intelfocl"]:
         # program intelfocl aocx
         vta.program_fpga(remote, bitstream="vta.bitstream")
 
 b = 1
+ob = b // env.BATCH
 m = 4
 vocab_size = 1024
 v = vocab_size // 16
@@ -126,67 +128,102 @@ k2 = te.reduce_axis((0, 16), name="ik")
 k3 = te.reduce_axis((0, v), name="k")
 k4 = te.reduce_axis((0, 16), name="ik")
 
-A = te.placeholder((b, m, v, 16), name='A', dtype=env.acc_dtype)
-A_buf = te.compute((b, m, v, 16), lambda *indices: A(*indices), "A_buf")
+A = te.placeholder((ob, m, v, env.BATCH, env.BLOCK_OUT), name='A', dtype=env.acc_dtype)
+A_buf = te.compute((ob, m, v, env.BATCH, env.BLOCK_OUT), lambda *indices: A(*indices), "A_buf")
 C_buf = te.compute(
-    (b, m, 16),
-    lambda bi, mi, ti: te.max(A_buf(bi, mi, k1, k2), axis=[k1, k2]), "C_buf"
+    (ob, m, env.BATCH, env.BLOCK_OUT),
+    lambda obi, mi, bi, ti: te.max(A_buf(obi, mi, k1, bi, k2), axis=[k1, k2]), "C_buf"
 )
-# Exp_buf = te.compute((b, m, v, 16), lambda bi, mi, vi, tnsi : te.exp(A_buf(bi, mi, vi, tnsi) - C_buf(bi, mi, tnsi) ) )
-#
-# Exp_buf_sum = te.compute((b, m, 16), lambda bi, mi, ti: te.sum(Exp_buf(bi, mi, k3, k4), axis=[k3, k4]) )
-# Soft_max = te.compute((b, m, v, 16) , lambda bi, mi, vi, ti: Exp_buf(bi, mi, vi, ti) // Exp_buf_sum(bi, mi, ti))
+Exp_buf = te.compute((ob, m, v, env.BATCH, env.BLOCK_OUT),
+                     lambda obi, mi, vi, bi, tnsi: A_buf(obi, mi, vi, bi, tnsi) - C_buf(obi, mi, bi, tnsi),
+                     "Exp_buf")
 
-# C_buf_pad = te.compute((b, m, 16), lambda *i: C_buf(*i), "C_buf_pad")
-C = te.compute((b, m, 16), lambda *i: C_buf(*i), "C")
-# C = te.compute((b, m, v, 16), lambda *i : Soft_max(*i), name="C")
+Exp_buf_sum = te.compute((ob, m, env.BATCH, env.BLOCK_OUT),
+                         lambda obi, mi, bi, ti: te.sum(Exp_buf(obi, mi, k3, bi, k4), axis=[k3, k4]))
+
+Soft_max = te.compute((ob, m, v, env.BATCH, env.BLOCK_OUT),
+                      lambda obi, mi, vi, bi, ti: Exp_buf(obi, mi, vi, bi, ti) // Exp_buf_sum(obi, mi, bi, ti))
+
+C = te.compute((ob, m, v, env.BATCH, env.BLOCK_OUT), lambda *i: Soft_max(*i).astype(env.inp_dtype), "C")
+# C = te.compute((ob, m, env.BATCH, env.BLOCK_OUT), lambda *i: Exp_buf_sum(*i).astype(env.inp_dtype), "C")
 
 s = te.create_schedule(C.op)
 
-# print(tvm.lower(s, [A, C], simple_mode=True))
+print(tvm.lower(s, [A, C], simple_mode=True))
+llvm_module = tvm.build(s, [A, C], tvm.target.Target("llvm", host=env.target_host))
+
+
+s[A_buf].compute_at(s[C], s[C].op.axis[1])
+s[C_buf].compute_at(s[C], s[C].op.axis[1])
+s[Exp_buf].compute_at(s[C], s[C].op.axis[1])
+s[Exp_buf_sum].compute_at(s[C], s[C].op.axis[1])
+s[Soft_max].compute_at(s[C], s[C].op.axis[1])
+
+cb_b, cb_m, cb_bi, cb_ti = s[C_buf].op.axis
+
+s[C_buf].reorder(cb_m, k1, cb_b, cb_bi, k2, cb_ti)
+s[C_buf].tensorize(cb_bi, env.aluc)
+
 
 s[A_buf].set_scope("local.acc_buffer")
 s[C_buf].set_scope("local.acc_buffer")
-# s[C].pragma(s[C].op.axis[0], env.dma_copy)
+s[Exp_buf].set_scope("local.acc_buffer")
+s[Exp_buf_sum].set_scope("local.acc_buffer")
+s[Soft_max].set_scope("local.acc_buffer")
 
-# s[Exp_buf].set_scope("local.acc_buffer")
-# s[Exp_buf_sum].set_scope("local.acc_buffer")
-# s[Soft_max].set_scope("local.acc_buffer")
-# s[C_buf_pad].set_scope("local.acc_buffer")
-# print(s[C_buf].op.axis)
-cb_b, cb_m, cb_ti = s[C_buf].op.axis
-# s[A_buf].compute_at(s[C_buf], k1)
-# s[C_buf].reorder(cb_b, cb_m, k1, k2, cb_ti)
-s[C_buf].reorder(k1, cb_m, cb_b, k2, cb_ti)
-s[C_buf].tensorize(k2, env.aluc)
-# s[C_buf].vectorize(cb_ti)
-# print(type(k2))
-# s[C_buf].tensorize(k1, env.alu)
-# s[Exp_buf].tensorize(s[Exp_buf].op.axis[2], env.alu)
-# s[Exp_buf].vectorize(s[Exp_buf].op.axis[3])
-# s[Exp_buf].tensorize(s[Exp_buf].op.axis[3], env.gemm)
 
-# s[C_buf].unroll(k2)
-# s[C_buf].vectorize(k2)
-# s[C_buf].unroll(cb_ti)
-# s[C_buf].unroll(k2)
+sum_ob, sum_m, sum_bi, sum_ti = s[Exp_buf_sum].op.axis
+s[Exp_buf_sum].reorder(k3, sum_ob, sum_m, sum_bi, k4, sum_ti)
+s[Exp_buf_sum].tensorize(sum_bi, env.pool_sum)
 
-# cbp_b, cbp_m, _ = s[C_buf_pad].op.axis
-# s[C_buf].compute_at(s[C_buf_pad], cbp_m)
+s[Exp_buf].pragma(Exp_buf.op.axis[0], "alu")
 
 s[A_buf].pragma(s[A_buf].op.axis[0], "dma_copy")
-s[C].pragma(s[C].op.axis[0], "dma_copy")
-# s[C_buf].pragma(C_buf.op.axis[0], "aluc")
+s[C].pragma(s[C].op.axis[2], "dma_copy")
+
+s[Soft_max].pragma(Soft_max.op.axis[0], "alu")
 
 
-tvm.lower(s, [A, C], simple_mode=True)
-
-# with my_build_config():
-#     # Let's take a look at the finalized schedule
-#     print(tvm.lower(s, [A, C], simple_mode=True))
 
 print(vta.lower(s, [A, C], simple_mode=True))
 
-# my_vmax = vta.build(
-#     s, [A, C], tvm.target.Target("ext_dev", host="llvm")
-# )
+my_softmax = vta.build(s, [A, C],
+                       tvm.target.Target("ext_dev", host=env.target_host))
+
+temp = "./"
+my_softmax.save(os.path.join(temp, "softmax.o"))
+
+remote.upload(os.path.join(temp, "softmax.o"))
+
+f = remote.load_module(os.path.join(temp, "softmax.o"))
+
+env = vta.get_env()
+
+ctx = remote.ext_dev(0)
+
+dev = tvm.device('cpu', 0)
+
+A_orig = np.random.randint(-128, 128, size=(ob, m, v, env.BATCH, env.BLOCK_OUT)).astype(A.dtype)
+
+A_nd = tvm.nd.array(A_orig, ctx)
+C_nd = tvm.nd.array(np.zeros((ob, m, v, env.BATCH, env.BLOCK_OUT)).astype(C.dtype), ctx)
+Aref_nd = tvm.nd.array(A_orig, dev)
+Cref_nd = tvm.nd.array(np.zeros((ob, m, v, env.BATCH, env.BLOCK_OUT)).astype(C.dtype), dev)
+
+if env.TARGET in ["sim", "tsim"]:
+    simulator.clear_stats()
+
+f(A_nd, C_nd)
+
+print('begin to infer with cpu')
+llvm_module(Aref_nd, Cref_nd)
+
+np.testing.assert_equal(Cref_nd.numpy(), C_nd.numpy())
+# Print stats
+if env.TARGET in ["sim", "tsim"]:
+    sim_stats = simulator.stats()
+    print("Execution statistics:")
+    for k, v in sim_stats.items():
+        print("\t{:<16}: {:>16}".format(k, v))
+
+print('finish compute')
