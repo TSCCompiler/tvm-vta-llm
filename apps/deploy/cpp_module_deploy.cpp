@@ -41,10 +41,18 @@ void matrix_multiply(std::string model_path){
 
 }
 void* load_vta_driver(std::string vta_driver_dso){
+#ifndef WIN32
     auto lib_handle_ = dlopen(vta_driver_dso.c_str(), RTLD_LAZY | RTLD_GLOBAL);
     ICHECK(lib_handle_ != nullptr) << "Failed to load dynamic shared library " << vta_driver_dso << " "
                                    << dlerror();
     return lib_handle_;
+#else
+    // use wstring version that is needed by LLVM.
+    std::wstring wname(vta_driver_dso.begin(), vta_driver_dso.end());
+    auto lib_handle_ = LoadLibraryW(wname.c_str());
+    ICHECK(lib_handle_ != nullptr) << "Failed to load dynamic shared library " << vta_driver_dso;
+    return lib_handle_;
+#endif
 
 }
 int main(int argc, char** argv){
