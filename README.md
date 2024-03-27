@@ -21,6 +21,8 @@ VTA-LLM Hardware Design Stack
 
 VTA-LLM 
 
+还在开发中。。。。。。
+
 希望增加softmax等新的op，让tvm-vta支持transformer模型的推理，现在通过增加了一个reduce的计算引擎，实现了softmax算子。
 相关代码在vta/python/vta_softmax.py里面。目前仅把新的算子增加到vta_fsim的 软件仿真模块里，并通过了测试。
 下一步将会把相关算法添加到chisel的rtl里面，或者增加到hls里面。下一步还想通过blackbox的方式，把hls生成的
