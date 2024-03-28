@@ -94,6 +94,8 @@ class AlignmentAllocator : public std::allocator<T> {
 //      printf("begin to free\n");
 #if defined(__MINGW32__)
       _aligned_free(p);
+#elif defined(WIN32)
+      _aligned_free(p);
 #else
       free(p);
 #endif
@@ -571,7 +573,7 @@ class UopQueue : public BaseQueue<VTAUop> {
       offset += ksize;
     }
     VTAMemCopyFromHost(static_cast<char*>(fpga_buff_), lbuf, total_size);
-#if defined(__MINGW32__)
+#if defined(__MINGW32__)  || defined(WIN32)
       _aligned_free(lbuf);
 #else
     free(lbuf);
