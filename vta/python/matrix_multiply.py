@@ -37,8 +37,9 @@ from __future__ import absolute_import, print_function
 import os
 import os
 os.environ[
-    "PATH"] = "D:\\workspace\\project\\nn_compiler\\tvm\\cmake-build-release_mingw;C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin\\amd64;D:\\Halide\llvm-install-rel\\bin;" \
-              "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.0\\bin;" + os.environ["PATH"]
+    "PATH"] = "D:\\workspace\\project\\nn_compiler\\tvm\\cmake-build-debug-visual-studio-2022;" \
+              "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin\\amd64;D:\\Halide\llvm-install-rel\\bin;" \
+              "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.8\\bin;" + os.environ["PATH"]
 import tvm
 import tvm.relay
 from tvm import te
