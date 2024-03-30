@@ -85,6 +85,7 @@ add_custom_command(
 add_custom_target(tcl
         DEPENDS
         ${CONFIG_TCL}
+        ${VTA_CONFIG}
 
        )
 
