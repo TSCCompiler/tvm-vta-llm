@@ -11,6 +11,7 @@ set(VTA_CONFIG "${VTA_HW_DIR}/config/vta_config.py")
 
 # OUTPUT_VARIABLE
 set(CONF "xc7z100ffg900-2_1x16_i8w8a32_15_15_18_17")
+message("pythoncmd : ${PYTHON_CMD}")
 if(NOT PYTHON_CMD)
         set(PYTHON_CMD python3)
 endif()
@@ -27,10 +28,12 @@ execute_process(COMMAND ${PYTHON_CMD} ${VTA_CONFIG} --cflags
 string(STRIP ${HLS_CFLAGS} HLS_CFLAGS)
 message(STATUS "got hls cflags ${HLS_CFLAGS}")
 
+
 set(CMAKE_CXX_FLAGS
-        ${CMAKE_CXX_FLAGS}
-        ${HLS_CFLAGS}
+        "${CMAKE_CXX_FLAGS}${HLS_CFLAGS}"
         )
+message(STATUS "cmake cxx flags : ${CMAKE_CXX_FLAGS}")
+
 
 SET(IP_BUILD_PATH "${BUILD_DIR}/hls/${CONF}")
 SET(HW_BUILD_PATH "${BUILD_DIR}/vivado/${CONF}")
@@ -70,7 +73,7 @@ add_custom_target(hw_build_dir
 
 add_custom_command(
         OUTPUT "${CONFIG_TCL}"
-        COMMAND python
+        COMMAND ${PYTHON_CMD}
         ARGS "${VTA_CONFIG}" --export-tcl "${CONFIG_TCL}"
         WORKING_DIRECTORY ${BUILD_DIR}
         DEPENDS
@@ -114,7 +117,7 @@ add_custom_target(bit
         DEPENDS ${BIT_PATH}
 )
 include_directories(
-        "/tools/Xilinx/Vivado/2018.3/include_no_rtti"
+        "/mnt/tools/Xilinx/Vivado/2019.1/include_no_rtti"
 )
 add_executable(vta_sim_test
         src/vta.cc
