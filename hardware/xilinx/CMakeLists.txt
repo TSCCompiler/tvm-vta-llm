@@ -30,7 +30,7 @@ message(STATUS "got hls cflags ${HLS_CFLAGS}")
 
 
 set(CMAKE_CXX_FLAGS
-        "${CMAKE_CXX_FLAGS}${HLS_CFLAGS}"
+        "${CMAKE_CXX_FLAGS} ${HLS_CFLAGS}"
         )
 message(STATUS "cmake cxx flags : ${CMAKE_CXX_FLAGS}")
 
@@ -117,9 +117,15 @@ add_custom_command(
 add_custom_target(bit
         DEPENDS ${BIT_PATH}
 )
-include_directories(
-        "/mnt/tools/Xilinx/Vivado/2019.1/include_no_rtti"
-)
+if (VIVADO_INCLUDE_DIRECTORY)
+        include_directories(${VIVADO_INCLUDE_DIRECTORY})
+else ()
+        include_directories(
+                "/mnt/tools/Xilinx/Vivado/2019.1/include_no_rtti"
+        )
+endif ()
+
+# D:\Xilinx\Vivado\2019.1\include
 add_executable(vta_sim_test
         src/vta.cc
         src/vta.h

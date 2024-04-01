@@ -117,6 +117,7 @@ elseif(PYTHON)
     list(APPEND TSIM_RUNTIME_SRCS ${VTA_HW_PATH}/src/tsim/tsim_driver.cc)
     list(APPEND TSIM_RUNTIME_SRCS ${VTA_HW_PATH}/src/dpi/module.cc)
     list(APPEND TSIM_RUNTIME_SRCS ${VTA_HW_PATH}/src/vmem/virtual_memory.cc)
+    message(STATUS "vta_tsim srcs : ${TSIM_RUNTIME_SRCS}")
     # Target lib: vta_tsim
     add_library(vta_tsim SHARED ${TSIM_RUNTIME_SRCS})
     target_include_directories(vta_tsim SYSTEM PUBLIC ${VTA_HW_PATH}/include ${VERILATOR_INC_DIR} ${VERILATOR_INC_DIR}/vltstd)
@@ -208,6 +209,32 @@ elseif(PYTHON)
     tvm_file_glob(GLOB CHISEL_RUNTIME_SRCS vta/runtime/*.cc)
 
     list(APPEND CHISEL_RUNTIME_SRCS ${VTA_HW_PATH}/src/chisel_eval/chisel_eval.cc)
+
+    # Target lib: vta_tsim
+    add_library(vta_chisel SHARED ${CHISEL_RUNTIME_SRCS})
+    target_include_directories(vta_chisel SYSTEM PUBLIC ${VTA_HW_PATH}/include ${VERILATOR_INC_DIR} ${VERILATOR_INC_DIR}/vltstd)
+    target_compile_definitions(vta_chisel PUBLIC DMLC_USE_LOGGING_LIBRARY=<tvm/runtime/logging.h>)
+    foreach(__def ${VTA_DEFINITIONS})
+      string(SUBSTRING ${__def} 3 -1 __strip_def)
+      target_compile_definitions(vta_chisel PUBLIC ${__strip_def})
+    endforeach()
+    if(APPLE)
+      set_property(TARGET vta_chisel APPEND PROPERTY LINK_FLAGS "-undefined dynamic_lookup")
+    endif(APPLE)
+
+    if (IS_WINDOWS)
+      if (TVM_LIBRARY_PATH)
+        target_link_libraries(vta_chisel
+                #            D:/workspace/project/nn_compiler/tvm/cmake-build-debug-mingw_x86_64/libtvm.dll.a
+                #            D:/workspace/project/nn_compiler/tvm/cmake-build-release_mingw/libtvm.dll.a
+                ${TVM_LIBRARY_PATH}
+        )
+      endif ()
+      #      target_link_libraries(vta_tsim
+      ##              D:/workspace/project/nn_compiler/tvm/cmake-build-debug-mingw_x86_64/libtvm.dll.a
+      #              D:/workspace/project/nn_compiler/tvm/cmake-build-release_mingw/libtvm.dll.a
+      #              )
+    endif ()
 
   endif ()
 
