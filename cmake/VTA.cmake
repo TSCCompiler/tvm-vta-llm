@@ -188,6 +188,29 @@ elseif(PYTHON)
     endif()
   endif()
 
+  # VTA Chisel eval
+  if (USE_CHISEL_EVAL)
+    if (VERILATOR_INC_DIR)
+      message(STATUS "set verilator inc dir : ${VERILATOR_INC_DIR}")
+    elseif(DEFINED ENV{VERILATOR_INC_DIR})
+      set(VERILATOR_INC_DIR $ENV{VERILATOR_INC_DIR})
+    elseif (EXISTS /usr/local/share/verilator/include)
+      set(VERILATOR_INC_DIR /usr/local/share/verilator/include)
+    elseif (EXISTS /usr/share/verilator/include)
+      set(VERILATOR_INC_DIR /usr/share/verilator/include)
+    else()
+      message(STATUS "Verilator not found in /usr/local/share/verilator/include")
+      message(STATUS "Verilator not found in /usr/share/verilator/include")
+      message(FATAL_ERROR "Cannot find Verilator, VERILATOR_INC_DIR is not defined")
+    endif()
+    # Add tsim driver sources
+    tvm_file_glob(GLOB CHISEL_RUNTIME_SRCS ${VTA_HW_PATH}/src/*.cc)
+    tvm_file_glob(GLOB CHISEL_RUNTIME_SRCS vta/runtime/*.cc)
+
+    list(APPEND CHISEL_RUNTIME_SRCS ${VTA_HW_PATH}/src/chisel_eval/chisel_eval.cc)
+
+  endif ()
+
 
 else()
   message(STATUS "Cannot found python in env, VTA build is skipped..")
