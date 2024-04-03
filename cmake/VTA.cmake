@@ -236,6 +236,15 @@ elseif(PYTHON)
       #              )
     endif ()
 
+    add_executable(vta_chisel_test
+            ${VTA_HW_PATH}/src/chisel_eval/chisel_eval_test.cc
+    )
+    target_link_libraries(vta_chisel_test
+            vta_chisel
+            ${TVM_RUNTIME_LIBRARY_PATH}
+            ${CMAKE_DL_LIBS}
+    )
+
   endif ()
 
 
