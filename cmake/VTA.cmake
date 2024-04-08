@@ -127,7 +127,7 @@ elseif(PYTHON)
       target_compile_definitions(vta_tsim PUBLIC ${__strip_def})
     endforeach()
     if(APPLE)
-      set_property(TARGET vta_fsim APPEND PROPERTY LINK_FLAGS "-undefined dynamic_lookup")
+      set_property(TARGET vta_tsim APPEND PROPERTY LINK_FLAGS "-undefined dynamic_lookup")
     endif(APPLE)
 
     if (IS_WINDOWS)

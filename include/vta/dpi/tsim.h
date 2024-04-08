@@ -42,6 +42,12 @@ typedef void (*VTASimDPIFunc)(
     dpi8_t* wait,
     dpi8_t* exit);
 
+typedef void (*VTAAxisDPIFunc)(
+        VTAContextHandle self,
+        const svOpenArrayHandle rd_bits,
+        dpi8_t rd_valid,
+        dpi8_t* rd_ready);
+
 /*!
  * \brief Host DPI callback function that is invoked in VTAHostDPI.v every clock cycle
  * \param req_valid Host has a valid request for read or write a register in Accel

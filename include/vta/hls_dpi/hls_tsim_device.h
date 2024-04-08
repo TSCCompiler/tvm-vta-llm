@@ -8,6 +8,7 @@
 #include <tvm/runtime/c_runtime_api.h>
 #include <stdint.h>
 #include <svdpi.h>
+#include "vta/dpi/tsim.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,6 +21,8 @@ typedef unsigned int dpi32_t;
 typedef unsigned long long dpi64_t; // NOLINT(*)
 
 TVM_DLL int VTADPIEval(int nstep);
+TVM_DLL void VTAHLSDPIInit(VTAContextHandle ctx,
+                           VTAAxisDPIFunc axisDpiFunc);
 
 #ifdef __cplusplus
 }

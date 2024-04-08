@@ -1,6 +1,6 @@
 include("${CMAKE_SOURCE_DIR}/cmake/vta_dpi.cmake")
 # /mnt/workspace/project/nn_compiler/vta-hw/hardware/chisel/test_run_dir/TestTopVerilog
-GenVerilatedDPI(hls_tsim_device TestTop ${TestTopPath}
+GenVerilatedDPI(hls_tsim_device TestTopWithCHLS ${TestTopPath}
         hls_tsim_device.cc
 )
 
