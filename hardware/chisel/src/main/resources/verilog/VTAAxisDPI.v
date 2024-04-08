@@ -18,11 +18,14 @@
  */
 
  module VTAAxisDPI
- {
+ (
+    input                        clock,
+    input                        reset,
     input [127:0]               queue_bits,
     input                       queue_valid,
     output                      queue_ready,
- };
+    output [7:0]                recv_cnt
+ );
    import "DPI-C" function void VTAAxisDPI
    (
      input longint  unsigned    rd_bits[],
@@ -30,24 +33,47 @@
      output byte    unsigned    rd_ready,
    );
    typedef longint      dpi_data_t  [1:0];
+   typedef logic        dpi1_t;
+   typedef logic  [7:0] dpi8_t;
+   typedef logic [31:0] dpi32_t;
 
    dpi_data_t   __rd_value;
    dpi8_t       __rd_valid;
    dpi8_t       __rd_ready;
+   dpi8_t       __recv_cnt;
+   dpi1_t       __reset;
 
-
-
-   integer i;
-   for (i = 0; i < 2; i= i+1) begin
-       assign __rd_value[i] = queue_bits[64*i +: 64]
+   // reset
+   always_ff @(posedge clock) begin
+        __reset <= reset;
    end
-   assign __rd_valid = dpi8_t ' (queue_valid)
-   assign queue_ready = dpi1_t ' (__rd_ready);
+
 
    always_ff @(posedge clock) begin
-    VTAAxisDPI(__rd_value,
-                __rd_valid,
-                __rd_ready)
+        if (reset ) begin
+            __recv_cnt = 0;
+            __rd_ready = 1;
+        end
+        else begin
+            VTAAxisDPI(__rd_value,
+                                __rd_valid,
+                                __rd_ready);
+            if(queue_valid) begin
+                __recv_cnt = __recv_cnt+1;
+            end
+
+
+        end
    end // always_ff
+
+  genvar i;
+  generate
+  for (i = 0; i < 2; i= i+1) begin
+      assign __rd_value[i] = queue_bits[64*i +: 64];
+  end
+  endgenerate
+  assign __rd_valid = dpi8_t ' (queue_valid);
+  assign queue_ready = dpi1_t ' (__rd_ready);
+  assign recv_cnt = __recv_cnt;
 
  endmodule

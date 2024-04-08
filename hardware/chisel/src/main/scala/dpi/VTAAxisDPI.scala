@@ -21,7 +21,10 @@ import chisel3._
 import chisel3.util._
 class VTAAxisDPI extends BlackBox with HasBlackBoxResource {
   val io = IO(new Bundle() {
+    val clock = Input(Clock())
+    val reset = Input(Bool())
     val queue = Flipped(DecoupledIO(UInt(128.W)))
+    val recv_cnt = Output(UInt(8.W))
   })
   addResource("/verilog/VTAAxisDPI.v")
 

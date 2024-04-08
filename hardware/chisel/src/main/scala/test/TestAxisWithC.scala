@@ -43,6 +43,21 @@ class TestAxisWithC extends Module{
     io.queue.bits := cnt
   }
 }
+class TestTopWithCHLS extends Module {
+  val io = IO(new Bundle() {
+    val queue = DecoupledIO(UInt(128.W))
+    val recv_cnt = Output(UInt(8.W))
+  })
+  val u_axis_data_producer = Module(new TestAxisWithC)
+  val u_axis_host = Module(new VTAAxisDPI)
+  io.queue <> u_axis_data_producer.io.queue
+  u_axis_host.io.queue <> u_axis_data_producer.io.queue
+  u_axis_host.io.clock := clock
+  u_axis_host.io.reset := reset.asBool()
+  io.recv_cnt := u_axis_host.io.recv_cnt
+  u_axis_data_producer.io.clk := clock
+
+}
 class TestTop extends Module {
   val io = IO(new Bundle() {
     val queue = DecoupledIO(UInt(128.W))
@@ -62,6 +77,17 @@ class TestAxisWithCTester(c:TestTop) extends PeekPokeTester(c) {
   println(s"final outputs $data")
 
 }
+class TestAxisWithCHLSTester(c:TestTopWithCHLS) extends PeekPokeTester(c) {
+  poke(c.io.queue.ready, 1)
+
+  step(8)
+
+  val data = peek(c.io.queue.bits)
+  val cnt = peek(c.io.recv_cnt)
+
+  println(s"final outputs $data and recv_cnt $cnt")
+
+}
 
 object Tester_Runner extends App {
   (new ChiselStage).emitVerilog(new TestTop, Array(
@@ -78,4 +104,21 @@ object Tester_Runner extends App {
   ), ()=> new TestTop())(
     c=>new TestAxisWithCTester(c)
   )
+}
+object TestTopWithCHLS_Runner extends App {
+  (new ChiselStage).emitVerilog(new TestTopWithCHLS, Array(
+    "--target-dir",
+    "test_run_dir/TestTopWithCHLS"
+  ))
+  Driver.execute(Array(
+    "--generate-vcd-output", "on",
+    "--target-dir", s"test_run_dir/TestTopWithCHLS_Runner",
+    "--top-name", s"TestTop",
+    //      "--backend-name", "treadle",
+    "--backend-name", "verilator",
+
+  ), ()=> new TestTopWithCHLS())(
+    c=>new TestAxisWithCHLSTester(c)
+  )
+
 }
