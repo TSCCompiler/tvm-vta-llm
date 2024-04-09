@@ -162,7 +162,7 @@ tvm::runtime::Module DPIChiselNode::Load(std::string dll_name) {
     return tvm::runtime::Module(n);
 }
 
-TVM_REGISTER_GLOBAL("runtime.module.loadfile_chisel-tsim")
+TVM_REGISTER_GLOBAL("runtime.module.loadfile_vta-chisel-tsim")
 .set_body([](tvm::runtime::TVMArgs args, tvm::runtime::TVMRetValue * rv){
    *rv = DPIChiselNode::Load(args[0]);
    //const auto* f = runtime::Registry::Get("relax.FuncWithAttrs")

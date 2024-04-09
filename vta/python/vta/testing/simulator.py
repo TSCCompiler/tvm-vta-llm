@@ -117,11 +117,14 @@ def _load_sw():
         if env.TARGET == "tsim"
         else "vta"
         if env.TARGET == "intelfocl"
+        # else "vta_fsim"
+        else "vta_chisel"
+        if env.TARGET == "chisel"
         else "vta_fsim"
     )
     if os.name != "nt":
         lib_driver_name = "lib"+lib_driver_name
-    require_sim = env.TARGET in ("sim", "tsim")
+    require_sim = env.TARGET in ("sim", "tsim", "chisel")
     libs = []
 
     # Load driver library
@@ -131,7 +134,7 @@ def _load_sw():
         return []
 
     try:
-        libs = [ctypes.CDLL(lib_driver[0], ctypes.RTLD_GLOBAL)]
+        libs = [ctypes.CDLL(lib_driver[0], ctypes.RTLD_LOCAL | 1)]
     except OSError as err:
         if require_sim:
             raise err
@@ -175,6 +178,9 @@ def _load_sw():
         m = tvm.runtime.load_module(lib_hw[0], "vta-tsim")
         f(m)
         return lib_hw
+    # elif env.TARGET == "chisel":
+    #     lib_hw = find_libvta("hls_tsim_device", optional=True)
+    #     assert lib_hw
 
     return libs
 

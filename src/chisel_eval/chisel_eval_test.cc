@@ -12,7 +12,7 @@ int main(int argc, char** argv)
     CHECK(lib_handle_ != nullptr)
         << "Failed to load dynamic shared library "
         << " " << dlerror();
-    const auto* f = tvm::runtime::Registry::Get("runtime.module.loadfile_chisel-tsim");
+    const auto* f = tvm::runtime::Registry::Get("runtime.module.loadfile_vta-chisel-tsim");
     tvm::runtime::Module n = (*f)(argv[1]);
     auto f2 = n.GetFunction("Eval");
     auto f3 = n.GetFunction("GetArray");
