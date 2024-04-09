@@ -56,34 +56,47 @@ public:
 protected:
     static void VTAAxisDPIFunc(
             VTAContextHandle self,
+            dpi32_t user_id,
             const svOpenArrayHandle rd_bits,
             dpi8_t rd_valid,
             dpi8_t* rd_ready){
         CHECK(self!= nullptr) << "got empty vta context handle in axis host callback";
-        reinterpret_cast<DPIChiselNode*>(self)->on_hls_stream_data(rd_bits,
+        reinterpret_cast<DPIChiselNode*>(self)->on_hls_stream_data(user_id,rd_bits,
                                                                    rd_valid,
                                                                    rd_ready);
     }
 protected:
-    void on_hls_stream_data(const svOpenArrayHandle rd_bits,
+    void on_hls_stream_data(
+            dpi32_t user_id,
+            const svOpenArrayHandle rd_bits,
                             dpi8_t rd_valid,
                             dpi8_t* rd_ready){
+        LOG(INFO) << "recv user id " << user_id;
         *rd_ready = 1;
         if (rd_valid){
             assert(rd_bits != NULL);
-            assert(svSize(rd_bits, 1) == 2);
+            assert(svSize(rd_bits, 1) <= 8);
             assert(svDimensions(rd_bits) == 1);
 
             assert(svSize(rd_bits, 0) == 64);
             int rgtIdx = svRight(rd_bits, 1);
-            AxisElem nelem;
-            for (int i = 0; i < 2; ++i) {
+            int blkNd = svSize(rd_bits, 1);
+            if (_userid_2_blkNd.find(user_id)==_userid_2_blkNd.end()){
+                _userid_2_blkNd[user_id]=blkNd;
+                // create and clear array
+                _userid_2_array[user_id] = std::vector<uint64_t >();
+            }else {
+                CHECK(_userid_2_blkNd[user_id]==blkNd) << "blknd changed for user " << user_id;
+            }
+            auto& varray = _userid_2_array[user_id];
+            for (int i = 0; i < blkNd; ++i) {
                 uint64_t * elemPtr = (uint64_t*) svGetArrElemPtr1(rd_bits, rgtIdx+i);
                 assert(elemPtr != NULL);
                 auto value = elemPtr[0];
-                nelem.val[i] = value;
+                varray.push_back(value);
+//                nelem.val[i] = value;
             }
-            _recv_vals.push_back(nelem);
+//            _recv_vals.push_back(nelem);
 
         }
 
@@ -98,7 +111,8 @@ protected:
         auto _init_func = reinterpret_cast<VTAHLSDPIInitFunc >(GetSymbol("VTAHLSDPIInit"));
         CHECK(_init_func != nullptr);
         _init_func(this, VTAAxisDPIFunc);
-        _recv_vals.clear();
+        _userid_2_array.clear();
+        _userid_2_blkNd.clear();
 
     }
     PackedFunc GetFunction(const tvm::runtime::String &name,
@@ -112,14 +126,20 @@ protected:
                 }
             );
         }else if(name=="GetArray"){
-            return TypedPackedFunc<tvm::runtime::NDArray()>(
-                    [this](){
-                        auto arr = tvm::runtime::NDArray::Empty({static_cast<long>(_recv_vals.size()), 2},
-                                                            DLDataType{kDLUInt, 64, 1},
-                                                            DLDevice{kDLCPU, 0});
-                        int axis_elem_sz = sizeof (AxisElem);
-                        LOG(INFO) << "axis elem sz " << axis_elem_sz;
-                        arr.CopyFromBytes(_recv_vals.data(), _recv_vals.size()*sizeof (AxisElem));
+            return TypedPackedFunc<tvm::runtime::NDArray(int )>(
+                    [this](int user_id){
+                        auto arr = tvm::runtime::NDArray();
+                        if (_userid_2_blkNd.find(user_id)!=_userid_2_blkNd.end()){
+                            if (_userid_2_array.find(user_id)!=_userid_2_array.end()){
+                                auto blknd = _userid_2_blkNd[user_id];
+                                const auto& vector_array = _userid_2_array[user_id];
+                                arr = tvm::runtime::NDArray::Empty({static_cast<long>((vector_array.size()/blknd)), blknd},
+                                                                   DLDataType{kDLUInt, 64, 1},
+                                                                   DLDevice{kDLCPU, 0});
+                                arr.CopyFromBytes(vector_array.data(), vector_array.size()*sizeof (uint64_t));
+                                return arr;
+                            }
+                        }
                         return arr;
                     }
             );
@@ -150,7 +170,9 @@ protected:
 
 protected:
     VTADPIEvalFunc _feval;
-    std::vector<AxisElem> _recv_vals;
+    std::map<int, std::vector<uint64_t > >  _userid_2_array;
+    std::map<int, int>                      _userid_2_blkNd;
+//    std::vector<uint64_t> _recv_vals;
 
 };
 

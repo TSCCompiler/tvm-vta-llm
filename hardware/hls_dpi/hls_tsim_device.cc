@@ -16,18 +16,19 @@
 static VTAContextHandle _ctx = nullptr;
 static VTAAxisDPIFunc _axis_dpi_func = nullptr;
 
-void VTAAxisDPI(const svOpenArrayHandle rd_bits,
+void VTAAxisDPI(dpi32_t user_id,
+        const svOpenArrayHandle rd_bits,
                 dpi8_t rd_valid,
                 dpi8_t* rd_ready)
 {
-    assert(rd_bits != NULL);
-    assert(svSize(rd_bits, 1) == 2);
-    assert(svDimensions(rd_bits) == 1);
-
-    assert(svSize(rd_bits, 0) == 64);
+//    assert(rd_bits != NULL);
+//    assert(svSize(rd_bits, 1) == 2);
+//    assert(svDimensions(rd_bits) == 1);
+//
+//    assert(svSize(rd_bits, 0) == 64);
     if (_ctx){
         if (_axis_dpi_func){
-            _axis_dpi_func(_ctx, rd_bits, rd_valid, rd_ready);
+            _axis_dpi_func(_ctx, user_id, rd_bits, rd_valid, rd_ready);
         }
     }
 //    assert(rd_bits != NULL);

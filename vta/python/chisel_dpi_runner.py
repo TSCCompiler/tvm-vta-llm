@@ -39,5 +39,5 @@ if __name__ == '__main__':
         eval_fn = dpi_module["Eval"]
         get_data_fn = dpi_module["GetArray"]
         ret = eval_fn(10)
-        ret_arr = get_data_fn()
+        ret_arr = get_data_fn(15)
         print(ret_arr)

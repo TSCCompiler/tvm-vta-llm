@@ -44,6 +44,7 @@ typedef void (*VTASimDPIFunc)(
 
 typedef void (*VTAAxisDPIFunc)(
         VTAContextHandle self,
+        dpi32_t user_id,
         const svOpenArrayHandle rd_bits,
         dpi8_t rd_valid,
         dpi8_t* rd_ready);

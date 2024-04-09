@@ -17,7 +17,7 @@ int main(int argc, char** argv)
     auto f2 = n.GetFunction("Eval");
     auto f3 = n.GetFunction("GetArray");
     int ret = f2(10);
-    tvm::runtime::NDArray ret_arr = f3();
+    tvm::runtime::NDArray ret_arr = f3(15);
     LOG(INFO) << "ret is " << ret;
     LOG(INFO) << "ret array is " << ret_arr.Shape();
     return 0;

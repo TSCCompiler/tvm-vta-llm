@@ -75,6 +75,9 @@ macro(GenVerilatedDPI TARGET_NAME TOP_NAME V_DIR)
                 "-I${V_DIR}"
                 ${V_DIR}/${TOP_NAME}.v
                 "--trace"
+                DEPENDS
+                ${ARGN}
+
         )
         add_library(${TARGET_NAME} SHARED
                 ${CMAKE_CURRENT_BINARY_DIR}/V${TOP_NAME}.cpp
