@@ -148,6 +148,7 @@ class AluVectorTester(c: AluVector, seed: Int = 47) extends PeekPokeTester(c) {
 class DefaultPynqConfig extends Config(new CoreConfig ++ new PynqConfig)
 class DefaultF1Config extends Config(new CoreConfig ++ new F1Config)
 class DefaultDe10Config extends Config(new CoreConfig ++ new De10Config)
+class DefaultCustomConfig extends Config(new CoreConfig ++ new CustomConfig)
 
 class GenericEval[T <: Module, P <: PeekPokeTester[T], C <: Parameters]
 (tag : String, dutFactory : (Parameters) => T, testerFactory : (T) => P) extends App {

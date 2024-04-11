@@ -42,6 +42,17 @@ class PynqConfig extends Config((site, here, up) => {
       vmeParams = VMEParams()
     )
 })
+/** Custom hls shell congfiuration */
+class CustomConfig extends Config((site, here, up) => {
+  case ShellKey =>
+    ShellParams(
+      hostParams = AXIParams(coherent = false,
+        addrBits = 6,
+        dataBits = 32),
+      memParams = AXIParams(), vcrParams = VCRParams(), vmeParams = VMEParams()
+    )
+})
+
 
 /** F1Config. Shell configuration for F1 */
 class F1Config extends Config((site, here, up) => {
