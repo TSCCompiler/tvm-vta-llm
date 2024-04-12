@@ -25,7 +25,7 @@ import chisel3.util._
 import vta.dpi._
 import vta.hls.blackboxes._
 import vta.interface.axi.{AXIClient, AXILiteMaster, AXIParams}
-import vta.shell.ShellKey
+import vta.shell.{ShellKey, VTAHost, VTAHostSim}
 import vta.util.config.Parameters
 import vta._
 
@@ -58,8 +58,38 @@ class SimAxiliteModule extends Module {
   io.interrupt := u_calc.io.interrupt
 
 }
+class HostSimAxiliteModule extends Module {
+  implicit val p : Parameters = new DefaultCustomConfig
+  val io = IO(new Bundle() {
+    val interrupt = Output(Bool())
+  })
+  val mod_host = Module(new VTAHostSim())
+  val u_calc = Module(new AxiliteExampleHls())
+  u_calc.io.ap_clk := clock
+  u_calc.io.ap_rst_n := reset.asBool()
+
+  mod_host.io.ap_clk := clock
+  mod_host.io.ap_rst_n := reset.asBool()
+
+  u_calc.io.s_axi_BUS_A <> mod_host.io.axi
+  io.interrupt := u_calc.io.interrupt
+}
+
+object HostSimAxiliteModuleVeri extends App {
+  (new ChiselStage).emitVerilog(new HostSimAxiliteModule, Array(
+    "--target-dir",
+    "test_run_dir/HostSimAxiliteModule"
+  ))
+}
 
 class SimAxiliteModulePoker(c:SimAxiliteModule) extends PeekPokeTester(c) {
+  step(100)
+
+  val is_done = peek(c.io.interrupt)
+  println(s"final outputs is $is_done")
+}
+
+class HostSimAxiliteModuleVeriPoker(c:HostSimAxiliteModule) extends PeekPokeTester(c) {
   step(100)
 
   val is_done = peek(c.io.interrupt)
@@ -75,6 +105,18 @@ object SimAxiliteModuleRunner extends App {
     "--backend-name", "verilator",
   ), ()=>new SimAxiliteModule())(
     c=>new SimAxiliteModulePoker(c)
+  )
+}
+
+object HostSimAxiliteModuleVeriRunner extends App {
+  Driver.execute(Array(
+    "--generate-vcd-output", "on",
+    "--target-dir", s"test_run_dir/HostSimAxiliteModuleVeriRunner",
+    "--top-name", s"HostSimAxiliteModule",
+    //      "--backend-name", "treadle",
+    "--backend-name", "verilator",
+  ), ()=>new HostSimAxiliteModule())(
+    c=>new HostSimAxiliteModuleVeriPoker(c)
   )
 }
 
