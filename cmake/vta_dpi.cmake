@@ -4,7 +4,7 @@ macro(GenVerilatedDPI TARGET_NAME TOP_NAME V_DIR)
     set(VERILATOR_OPT "${VERILATOR_OPT} +define+RANDOMIZE_GARBAGE_ASSIGN")
     set(VERILATOR_OPT "${VERILATOR_OPT} +define+RANDOMIZE_REG_INIT")
     set(VERILATOR_OPT "${VERILATOR_OPT} +define+RANDOMIZE_MEM_INIT")
-    set(VERILATOR_OPT "${VERILATOR_OPT} -Wno-Warning-STMTDLY")
+    set(VERILATOR_OPT "${VERILATOR_OPT} -Wno-Warning-STMTDLY -Wno-WIDTH -Wno-CASEINCOMPLETE")
     set(VERILATOR_OPT "${VERILATOR_OPT} --x-assign unique")
     set(VERILATOR_OPT "${VERILATOR_OPT} --output-split 20000")
     set(VERILATOR_OPT "${VERILATOR_OPT} --output-split-cfuncs 20000")
@@ -69,6 +69,7 @@ macro(GenVerilatedDPI TARGET_NAME TOP_NAME V_DIR)
                 --x-assign unique
                 --output-split 20000
                 --output-split-cfuncs 20000
+                -Wno-STMTDLY -Wno-WIDTH -Wno-CASEINCOMPLETE
                 "--top-module"
                 "${TOP_NAME}"
                 "-Mdir"

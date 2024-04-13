@@ -7,7 +7,7 @@
 
 #include <verilated_vcd_c.h>
 
-#include "VTestTopWithCHLS.h"
+//#include "VTestTopWithCHLS.h"
 
 
 #define STRINGIZE(x) #x
@@ -15,6 +15,7 @@
 
 static VTAContextHandle _ctx = nullptr;
 static VTAAxisDPIFunc _axis_dpi_func = nullptr;
+static VTAHostDPIFunc _host_dpi = nullptr;
 
 void VTAAxisDPI(dpi32_t user_id,
         const svOpenArrayHandle rd_bits,
@@ -48,15 +49,30 @@ void VTAAxisDPI(dpi32_t user_id,
 
 
 }
+
+void VTAHostDPI(dpi8_t* req_valid,
+                dpi8_t* req_opcode,
+                dpi8_t* req_addr,
+                dpi32_t* req_value,
+                dpi8_t req_deq,
+                dpi8_t resp_valid,
+                dpi32_t resp_value) {
+    assert(_host_dpi != nullptr);
+    (*_host_dpi)(_ctx, req_valid, req_opcode,
+                 req_addr, req_value, req_deq,
+                 resp_valid, resp_value);
+}
 // Override Verilator finish definition
 // VL_USER_FINISH needs to be defined when compiling Verilator code
 void vl_finish(const char* filename, int linenum, const char* hier) {
     Verilated::gotFinish(true);
 }
 void VTAHLSDPIInit(VTAContextHandle ctx,
-                   VTAAxisDPIFunc axisDpiFunc){
+                   VTAAxisDPIFunc axisDpiFunc,
+                   VTAHostDPIFunc host_dpi){
     _ctx = ctx;
     _axis_dpi_func = axisDpiFunc;
+    _host_dpi = host_dpi;
 }
 int VTADPIEval(int nstep){
     uint64_t trace_count = 0;
@@ -86,25 +102,36 @@ int VTADPIEval(int nstep){
         trace_count++;
     }
     top->reset = 0;
-    top->io_queue_ready = 1;
+//    top->io_queue_ready = 1;
 
-    for (int i = 0; i < nstep; ++i) {
+    while (!Verilated::gotFinish()){
         top->clock = 0;
         top->eval();
         tfp->dump(static_cast<vluint64_t>(trace_count * 2));
         top->clock = 1;
         top->eval();
         tfp->dump(static_cast<vluint64_t>(trace_count * 2 + 1));
-
         trace_count++;
     }
+
+//    for (int i = 0; i < nstep; ++i) {
+//        top->clock = 0;
+//        top->eval();
+//        tfp->dump(static_cast<vluint64_t>(trace_count * 2));
+//        top->clock = 1;
+//        top->eval();
+//        tfp->dump(static_cast<vluint64_t>(trace_count * 2 + 1));
+//
+//        trace_count++;
+//    }
     tfp->close();
-    uint32_t wd = top->io_queue_bits[0];
-    uint32_t cnt = top->io_recv_cnt;
-    fprintf(stdout, "recv cnt : %d\n", cnt);
+//    uint32_t wd = top->io_queue_bits[0];
+//    uint32_t cnt = top->io_recv_cnt;
+    bool interrupt = top->io_interrupt;
+    fprintf(stdout, "interrupt : %d\n", interrupt);
 
     delete top;
 
-    return wd;
+    return interrupt;
 
 }
