@@ -206,7 +206,7 @@ elseif(PYTHON)
     endif()
     # Add tsim driver sources
     tvm_file_glob(GLOB CHISEL_RUNTIME_SRCS ${VTA_HW_PATH}/src/*.cc)
-    tvm_file_glob(GLOB CHISEL_RUNTIME_SRCS vta/runtime/*.cc)
+#    tvm_file_glob(GLOB CHISEL_RUNTIME_SRCS vta/runtime/*.cc)
 
     list(APPEND CHISEL_RUNTIME_SRCS ${VTA_HW_PATH}/src/chisel_eval/chisel_eval.cc)
 

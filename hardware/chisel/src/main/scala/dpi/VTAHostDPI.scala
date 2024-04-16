@@ -148,7 +148,10 @@ class VTAHostDPIToAXI(debug: Boolean = false)(implicit p: Parameters) extends Mo
 
   if (debug) {
     when(state === sWriteAddress && io.axi.aw.ready) {
-      printf("[VTAHostDPIToAXI] [AW] addr:%x\n", addr)
+      printf("[VTAHostDPIToAXI] [AW] addr:%x with output deq:%d\n", addr, io.dpi.req.deq)
+    }
+    when(io.dpi.req.deq){
+      printf("dep to host dpi is high\n")
     }
     when(state === sReadAddress && io.axi.ar.ready) {
       printf("[VTAHostDPIToAXI] [AR] addr:%x\n", addr)

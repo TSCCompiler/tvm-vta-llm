@@ -22,16 +22,22 @@
 
 #include "vta/dpi/tsim.h"
 
+// Include verilator array access functions code
+#include "verilated.cpp"
+#include "verilated_dpi.cpp"
+
 #if defined(_WIN32)
 #include <windows.h>
+
+
 #else
 #include <dlfcn.h>
+#endif
+
 #include <cassert>
 #include <queue>
 #include <condition_variable>
 #include <thread>
-
-#endif
 
 namespace vta {
 namespace chisel{
@@ -174,6 +180,9 @@ protected:
                  dpi8_t req_deq,
                  dpi8_t resp_valid,
                  dpi32_t resp_value) {
+        if (req_deq==1){
+            LOG(INFO) << "Got high";
+        }
         HostRequest* r = new HostRequest;
         *req_valid = host_device_.TryPopRequest(r, req_deq);
         *req_opcode = r->opcode;
@@ -263,6 +272,26 @@ protected:
         return 0;
     }
 protected:
+
+#if defined(_WIN32)
+    // library handle
+    HMODULE lib_handle_{nullptr};
+    // Load the library
+    void LoadDSO(const std::string& name) {
+        // use wstring version that is needed by LLVM.
+        std::wstring wname(name.begin(), name.end());
+        lib_handle_ = LoadLibraryW(wname.c_str());
+        CHECK(lib_handle_ != nullptr)
+            << "Failed to load dynamic shared library " << name;
+    }
+    void* GetSymbol(const char* name) {
+        return reinterpret_cast<void*>(
+                GetProcAddress(lib_handle_, (LPCSTR)name)); // NOLINT(*)
+    }
+    void Unload() {
+        FreeLibrary(lib_handle_);
+    }
+#else
     // Library handle
     void* lib_handle_{nullptr};
     void LoadDSO(const std::string & name) {
@@ -277,6 +306,7 @@ protected:
     void Unload() {
         dlclose(lib_handle_);
     }
+#endif
 
 protected:
     VTADPIEvalFunc _feval;
