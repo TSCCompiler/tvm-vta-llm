@@ -5,6 +5,7 @@
 #include <tvm/runtime/packed_func.h>
 #include <tvm/runtime/ndarray.h>
 #include <dlfcn.h>
+#include <thread>
 
 int main(int argc, char** argv)
 {
@@ -16,9 +17,18 @@ int main(int argc, char** argv)
     tvm::runtime::Module n = (*f)(argv[1]);
     auto f2 = n.GetFunction("Eval");
     auto f3 = n.GetFunction("GetArray");
+    auto f_write = n.GetFunction("WriteReg");
+    auto f_read = n.GetFunction("ReadReg");
     int ret = f2(10);
-    tvm::runtime::NDArray ret_arr = f3(15);
-    LOG(INFO) << "ret is " << ret;
-    LOG(INFO) << "ret array is " << ret_arr.Shape();
+    std::this_thread::sleep_for(std::chrono::seconds (10));
+    if (ret){
+        printf("begin to cal it");
+        f_write(10, 5);
+        int val = f_read(10);
+        LOG(INFO) << "val : " << val;
+    }
+//    tvm::runtime::NDArray ret_arr = f3(15);
+//    LOG(INFO) << "ret is " << ret;
+//    LOG(INFO) << "ret array is " << ret_arr.Shape();
     return 0;
 }

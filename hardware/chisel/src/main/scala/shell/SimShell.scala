@@ -49,9 +49,10 @@ class VTAHostSim(implicit p: Parameters) extends Module {
     val axi = new AXILiteMaster(p(ShellKey).hostParams)
   })
   val host_dpi = Module(new VTAHostDPI)
-  val host_axi = Module(new VTAHostDPIToAXI)
+  val host_axi = Module(new VTAHostDPIToAXI(debug = true))
   host_dpi.io.clock := io.ap_clk
   host_dpi.io.reset := io.ap_rst_n
+
   host_axi.io.dpi <> host_dpi.io.dpi
   io.axi <> host_axi.io.axi
 

@@ -22,7 +22,8 @@ typedef unsigned long long dpi64_t; // NOLINT(*)
 
 TVM_DLL int VTADPIEval(int nstep);
 TVM_DLL void VTAHLSDPIInit(VTAContextHandle ctx,
-                           VTAAxisDPIFunc axisDpiFunc);
+                           VTAAxisDPIFunc axisDpiFunc,
+                           VTAHostDPIFunc host_dpi);
 
 #ifdef __cplusplus
 }

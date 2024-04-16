@@ -22,31 +22,11 @@ void VTAAxisDPI(dpi32_t user_id,
                 dpi8_t rd_valid,
                 dpi8_t* rd_ready)
 {
-//    assert(rd_bits != NULL);
-//    assert(svSize(rd_bits, 1) == 2);
-//    assert(svDimensions(rd_bits) == 1);
-//
-//    assert(svSize(rd_bits, 0) == 64);
     if (_ctx){
         if (_axis_dpi_func){
             _axis_dpi_func(_ctx, user_id, rd_bits, rd_valid, rd_ready);
         }
     }
-//    assert(rd_bits != NULL);
-//    assert(svDimensions(rd_bits) == 1);
-//    assert(svSize(rd_bits, 1) <= 8);
-//    assert(svSize(rd_bits, 0) == 64);
-//    int lftIdx = svLeft(rd_bits, 1);
-//    int rgtIdx = svRight(rd_bits, 1);
-//    int blkNb  = lftIdx - rgtIdx + 1;
-//    for (int i = 0; i < blkNb; ++i) {
-//        uint64_t* elemPtr = (uint64_t*)svGetArrElemPtr1(rd_bits, rgtIdx + i);
-//        assert(elemPtr != NULL);
-//        auto value = elemPtr[0];
-//        fprintf(stdout, "value : %ld\n", value);
-//    }
-//    rd_ready[0] = 1;
-
 
 }
 
@@ -87,7 +67,7 @@ int VTADPIEval(int nstep){
     VerilatedVcdC* tfp = new VerilatedVcdC;
 
     top->trace(tfp, 99);
-    tfp->open(STRINGIZE_VALUE_OF(TSIM_TRACE_FILE));
+    tfp->open("/mnt/workspace/project/nn_compiler/vta-hw/hardware/chisel/test_run_dir/AxiliteExampleHls/axilite.vcd");
 
     for (int i = 0; i < 10; ++i) {
         top->reset = 1;

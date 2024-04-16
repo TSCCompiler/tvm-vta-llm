@@ -27,6 +27,9 @@
 #else
 #include <dlfcn.h>
 #include <cassert>
+#include <queue>
+#include <condition_variable>
+#include <thread>
 
 #endif
 
@@ -37,12 +40,64 @@ namespace chisel{
     {
         uint64_t val[2];
     }AxisElem;
+    struct HostRequest {
+        uint8_t opcode;
+        uint8_t addr;
+        uint32_t value;
+    };
+
+    struct HostResponse {
+        uint32_t value;
+    };
+    template <typename T>
+    class ThreadSafeQueue {
+    public:
+        void Push(const T item) {
+            std::lock_guard<std::mutex> lock(mutex_);
+            queue_.push(std::move(item));
+            cond_.notify_one();
+        }
+
+        void WaitPop(T* item) {
+            std::unique_lock<std::mutex> lock(mutex_);
+            cond_.wait(lock, [this]{return !queue_.empty();});
+            *item = std::move(queue_.front());
+            queue_.pop();
+        }
+
+        bool TryPop(T* item, bool pop) {
+            std::lock_guard<std::mutex> lock(mutex_);
+            if (queue_.empty()) return false;
+            *item = std::move(queue_.front());
+            if (pop) queue_.pop();
+            return true;
+        }
+
+    private:
+        mutable std::mutex mutex_;
+        std::queue<T> queue_;
+        std::condition_variable cond_;
+    };
+    class HostDevice {
+    public:
+        void PushRequest(uint8_t opcode, uint8_t addr, uint32_t value);
+        bool TryPopRequest(HostRequest* r, bool pop);
+        void PushResponse(uint32_t value);
+        void WaitPopResponse(HostResponse* r);
+
+    private:
+        mutable std::mutex mutex_;
+        ThreadSafeQueue<HostRequest> req_;
+        ThreadSafeQueue<HostResponse> resp_;
+    };
+
 
 /*! \brief The type of VTADPISim function pointer */
 //    int VTADPIEval(int nstep)
 typedef int (*VTADPIEvalFunc)(int);
 typedef void (*VTAHLSDPIInitFunc)(VTAContextHandle ctx,
-                           VTAAxisDPIFunc axisDpiFunc);
+                           VTAAxisDPIFunc axisDpiFunc,
+                                  VTAHostDPIFunc host_dpi);
 
 using tvm::runtime::Module;
 
@@ -64,6 +119,19 @@ protected:
         reinterpret_cast<DPIChiselNode*>(self)->on_hls_stream_data(user_id,rd_bits,
                                                                    rd_valid,
                                                                    rd_ready);
+    }
+    static void VTAHostDPI(
+            VTAContextHandle self,
+            dpi8_t* req_valid,
+            dpi8_t* req_opcode,
+            dpi8_t* req_addr,
+            dpi32_t* req_value,
+            dpi8_t req_deq,
+            dpi8_t resp_valid,
+            dpi32_t resp_value) {
+        static_cast<DPIChiselNode*>(self)->HostDPI(
+                req_valid, req_opcode, req_addr,
+                req_value, req_deq, resp_valid, resp_value);
     }
 protected:
     void on_hls_stream_data(
@@ -97,11 +165,24 @@ protected:
 //                nelem.val[i] = value;
             }
 //            _recv_vals.push_back(nelem);
-
         }
-
-
-
+    }
+    void HostDPI(dpi8_t* req_valid,
+                 dpi8_t* req_opcode,
+                 dpi8_t* req_addr,
+                 dpi32_t* req_value,
+                 dpi8_t req_deq,
+                 dpi8_t resp_valid,
+                 dpi32_t resp_value) {
+        HostRequest* r = new HostRequest;
+        *req_valid = host_device_.TryPopRequest(r, req_deq);
+        *req_opcode = r->opcode;
+        *req_addr = r->addr;
+        *req_value = r->value;
+        if (resp_valid) {
+            host_device_.PushResponse(resp_value);
+        }
+        delete r;
     }
 protected:
     void Init(const std::string & name) {
@@ -110,10 +191,23 @@ protected:
         CHECK(_feval != nullptr);
         auto _init_func = reinterpret_cast<VTAHLSDPIInitFunc >(GetSymbol("VTAHLSDPIInit"));
         CHECK(_init_func != nullptr);
-        _init_func(this, VTAAxisDPIFunc);
+        _init_func(this, VTAAxisDPIFunc, VTAHostDPI);
         _userid_2_array.clear();
         _userid_2_blkNd.clear();
 
+    }
+    void WriteReg(int addr, uint32_t value) {
+        host_device_.PushRequest(1, addr, value);
+    }
+
+    uint32_t ReadReg(int addr) {
+        uint32_t value;
+        HostResponse* r = new HostResponse;
+        host_device_.PushRequest(0, addr, 0);
+        host_device_.WaitPopResponse(r);
+        value = r->value;
+        delete r;
+        return value;
     }
     PackedFunc GetFunction(const tvm::runtime::String &name,
                            const ObjectPtr<tvm::runtime::Object> &sptr_to_self) override
@@ -143,14 +237,30 @@ protected:
                         return arr;
                     }
             );
+        }else if(name=="WriteReg"){
+            return TypedPackedFunc<void(int, int)>(
+                    [this](int addr, int value){
+                        this->WriteReg(addr, value);
+                    }
+            );
+        }else if(name=="ReadReg"){
+            return TypedPackedFunc<int(int)>(
+                    [this](int addr) -> int {
+                        return this->ReadReg(addr);
+                    }
+                    );
         }
     }
     int eval_step(int nstep){
+        // start it in thread only once
         if (_feval){
-            int ret = _feval(nstep);
-            return ret;
+            auto frun = [this](){
+                (*_feval)(10);
+            };
+            tsim_thread_ = std::thread(frun);
+            return 1;
         }
-        return -1;
+        return 0;
     }
 protected:
     // Library handle
@@ -172,9 +282,36 @@ protected:
     VTADPIEvalFunc _feval;
     std::map<int, std::vector<uint64_t > >  _userid_2_array;
     std::map<int, int>                      _userid_2_blkNd;
+    HostDevice host_device_;
+    std::thread tsim_thread_;
 //    std::vector<uint64_t> _recv_vals;
 
 };
+
+void HostDevice::PushRequest(uint8_t opcode, uint8_t addr, uint32_t value) {
+    HostRequest r;
+    r.opcode = opcode;
+    r.addr = addr;
+    r.value = value;
+    req_.Push(r);
+}
+
+bool HostDevice::TryPopRequest(HostRequest* r, bool pop) {
+    r->opcode = 0xad;
+    r->addr = 0xad;
+    r->value = 0xbad;
+    return req_.TryPop(r, pop);
+}
+
+void HostDevice::PushResponse(uint32_t value) {
+    HostResponse r;
+    r.value = value;
+    resp_.Push(r);
+}
+
+void HostDevice::WaitPopResponse(HostResponse* r) {
+    resp_.WaitPop(r);
+}
 
 
 

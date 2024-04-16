@@ -66,7 +66,7 @@ class HostSimAxiliteModule extends Module {
   val mod_host = Module(new VTAHostSim())
   val u_calc = Module(new AxiliteExampleHls())
   u_calc.io.ap_clk := clock
-  u_calc.io.ap_rst_n := reset.asBool()
+  u_calc.io.ap_rst_n := ~reset.asBool()
 
   mod_host.io.ap_clk := clock
   mod_host.io.ap_rst_n := reset.asBool()
