@@ -38,7 +38,7 @@ int main(int argc, char** argv)
     auto f_write = n.GetFunction("WriteReg");
     auto f_read = n.GetFunction("ReadReg");
     int ret = f2(10);
-    std::this_thread::sleep_for(std::chrono::seconds (5));
+//    std::this_thread::sleep_for(std::chrono::seconds (1));
     if (ret){
         printf("begin to cal it");
         int control_signals = f_read(0x0);
