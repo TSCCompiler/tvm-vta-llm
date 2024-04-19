@@ -77,6 +77,26 @@ class VTAMem(implicit p: Parameters) extends Module {
   mem_axi.io.axi <> io.axi
 }
 
+/** VTAMem.
+ *
+ * This module translate the DPI protocol into AXI. This is a simulation only
+ * module and used to test VTA-to-memory communication. This module should be updated
+ * for testing memories using a different bus protocol, other than AXI.
+ */
+class VTAMemSim(implicit p: Parameters) extends Module {
+  val io = IO(new Bundle {
+    val ap_clk = Input(Clock())
+    val ap_rst = Input(Bool())
+    val axi = new AXIClient(p(ShellKey).memParams)
+  })
+  val mem_dpi = Module(new VTAMemDPI)
+  val mem_axi = Module(new VTAMemDPIToAXI)
+  mem_dpi.io.reset := io.ap_rst
+  mem_dpi.io.clock := io.ap_clk
+  mem_dpi.io.dpi <> mem_axi.io.dpi
+  mem_axi.io.axi <> io.axi
+}
+
 /** VTASim.
  *
  * This module is used to handle hardware simulation thread, such as halting
