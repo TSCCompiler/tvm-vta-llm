@@ -9,7 +9,7 @@
 
 //#include "VTestTopWithCHLS.h"
 //#include "VHostSimAxiliteModule.h"
-//#include "Vd"
+#include <VDPISimAxi4MasterModule.h>
 
 
 #define STRINGIZE(x) #x

@@ -234,9 +234,6 @@ protected:
                  dpi8_t req_deq,
                  dpi8_t resp_valid,
                  dpi32_t resp_value) {
-        if (req_deq==1){
-            LOG(INFO) << "Got high";
-        }
         HostRequest* r = new HostRequest;
         *req_valid = host_device_.TryPopRequest(r, req_deq);
         *req_opcode = r->opcode;
@@ -288,6 +285,7 @@ protected:
             mem_device_.WriteData(wr_value, wr_strb);
         }
         if (rd_req_valid || wr_req_valid) {
+            LOG(INFO) << "rd req addr : " << rd_req_addr;
             mem_device_.SetRequest(
                     rd_req_valid,
                     rd_req_addr,
@@ -304,7 +302,8 @@ protected:
         for (int idx = 0; idx < blkNb; idx ++) {
             uint64_t* dataPtr = (uint64_t*)svGetArrElemPtr1(rd_value, rgtIdx + idx);
             assert(dataPtr != NULL);
-            (*dataPtr) = r.value[idx];
+            uint32_t val = 0;//r.value[idx];
+            (*dataPtr) = val;
         }
         *rd_id     = r.id;
     }
@@ -527,7 +526,9 @@ void MemDevice::WriteData(svOpenArrayHandle value, uint64_t wr_strb) {
             if (strbFlags != 0) {
                 uint64_t* elemPtr = (uint64_t*)svGetArrElemPtr1(value, rgtIdx + idx);
                 assert(elemPtr != NULL);
-                waddr_[idx] = (*elemPtr);
+                LOG(INFO) << "setting data as " << (*elemPtr);
+                //todo set waddr to real addr
+                //waddr_[idx] = (*elemPtr);
             }
         }
         waddr_ += blkNb;

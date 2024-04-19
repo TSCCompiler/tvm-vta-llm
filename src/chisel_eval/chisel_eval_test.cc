@@ -62,8 +62,8 @@ int main(int argc, char** argv)
         bool ap_auto_restart = get_bit_mask(control_signals, 7);
         LOG(INFO) << "ap start " << ap_start
         <<"ap_ready " << ap_ready;
-        f_write(0x10, 5);
-        f_write(0x18, 10);
+        f_write(0x10, 64);
+//        f_write(0x18, 10);
         control_signals = set_bit_mask(control_signals, 0, true);
         f_write(0x0, control_signals);
         do {
@@ -73,6 +73,7 @@ int main(int argc, char** argv)
                 break;
             }
         } while (true);
+        LOG(INFO) << "got is done signal ";
 
 //        printf("control signals %x\n", control_signals);
         int c_val = f_read(0x28);
