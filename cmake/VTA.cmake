@@ -244,6 +244,10 @@ elseif(PYTHON)
             ${TVM_RUNTIME_LIBRARY_PATH}
             ${CMAKE_DL_LIBS}
     )
+    add_dependencies(vta_chisel_test
+            vta_chisel
+            hls_tsim_device
+    )
 
   endif ()
 

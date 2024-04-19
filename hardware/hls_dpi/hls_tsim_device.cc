@@ -8,7 +8,8 @@
 #include <verilated_vcd_c.h>
 
 //#include "VTestTopWithCHLS.h"
-#include "VHostSimAxiliteModule.h"
+//#include "VHostSimAxiliteModule.h"
+//#include "Vd"
 
 
 #define STRINGIZE(x) #x
@@ -17,6 +18,7 @@
 static VTAContextHandle _ctx = nullptr;
 static VTAAxisDPIFunc _axis_dpi_func = nullptr;
 static VTAHostDPIFunc _host_dpi = nullptr;
+static VTAMemDPIFunc _mem_dpi = nullptr;
 
 void VTAAxisDPI(dpi32_t user_id,
         const svOpenArrayHandle rd_bits,
@@ -43,6 +45,28 @@ void VTAHostDPI(dpi8_t* req_valid,
                  req_addr, req_value, req_deq,
                  resp_valid, resp_value);
 }
+
+void VTAMemDPI(dpi8_t rd_req_valid,
+               dpi8_t rd_req_len,
+               dpi8_t rd_req_id,
+               dpi64_t rd_req_addr,
+               dpi8_t wr_req_valid,
+               dpi8_t wr_req_len,
+               dpi64_t wr_req_addr,
+               dpi8_t wr_valid,
+               const svOpenArrayHandle wr_value,
+               dpi64_t wr_strb,
+               dpi8_t* rd_valid,
+               dpi8_t* rd_id,
+               const svOpenArrayHandle  rd_value,
+               dpi8_t rd_ready) {
+    assert(_mem_dpi != nullptr);
+    (*_mem_dpi)(_ctx, rd_req_valid, rd_req_len, rd_req_id,
+                rd_req_addr, wr_req_valid, wr_req_len, wr_req_addr,
+                wr_valid, wr_value, wr_strb,
+                rd_valid, rd_id,rd_value, rd_ready);
+
+}
 // Override Verilator finish definition
 // VL_USER_FINISH needs to be defined when compiling Verilator code
 void vl_finish(const char* filename, int linenum, const char* hier) {
@@ -50,10 +74,12 @@ void vl_finish(const char* filename, int linenum, const char* hier) {
 }
 void VTAHLSDPIInit(VTAContextHandle ctx,
                    VTAAxisDPIFunc axisDpiFunc,
-                   VTAHostDPIFunc host_dpi){
+                   VTAHostDPIFunc host_dpi,
+                   VTAMemDPIFunc mem_dpi){
     _ctx = ctx;
     _axis_dpi_func = axisDpiFunc;
     _host_dpi = host_dpi;
+    _mem_dpi = mem_dpi;
 }
 int VTADPIEval(int nstep){
     uint64_t trace_count = 0;

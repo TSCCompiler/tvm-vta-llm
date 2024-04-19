@@ -39,7 +39,7 @@ int main(int argc, char** argv)
     CHECK(lib_handle_ != nullptr)
         << "Failed to load dynamic shared library " << name;
 #else
-    void* lib_handle_ = dlopen("/mnt/workspace/project/nn_compiler/vta-hw/cmake-build-debug/libvta_chisel.so", RTLD_LAZY | RTLD_LOCAL);
+    void* lib_handle_ = dlopen(argv[1], RTLD_LAZY | RTLD_LOCAL);
     CHECK(lib_handle_ != nullptr)
         << "Failed to load dynamic shared library "
         << " " << dlerror();

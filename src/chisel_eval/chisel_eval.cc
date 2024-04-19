@@ -55,6 +55,11 @@ namespace chisel{
     struct HostResponse {
         uint32_t value;
     };
+    struct MemResponse {
+        uint8_t valid;
+        uint8_t id;
+        uint64_t* value;
+    };
     template <typename T>
     class ThreadSafeQueue {
     public:
@@ -96,14 +101,41 @@ namespace chisel{
         ThreadSafeQueue<HostRequest> req_;
         ThreadSafeQueue<HostResponse> resp_;
     };
+    class MemDevice {
+    public:
+        void  SetRequest(
+                uint8_t  rd_req_valid,
+                uint64_t rd_req_addr,
+                uint32_t rd_req_len,
+                uint32_t rd_req_id,
+                uint64_t wr_req_addr,
+                uint32_t wr_req_len,
+                uint8_t  wr_req_valid);
+        MemResponse ReadData(uint8_t ready, int blkNb);
+        void WriteData(svOpenArrayHandle value, uint64_t wr_strb);
+
+    private:
+        uint64_t* raddr_{0};
+        uint64_t* waddr_{0};
+        uint32_t rlen_{0};
+        uint32_t rid_{0};
+        uint32_t wlen_{0};
+        std::mutex mutex_;
+        uint64_t dead_beef_ [8] = {0xdeadbeefdeadbeef,0xdeadbeefdeadbeef,
+                                   0xdeadbeefdeadbeef,0xdeadbeefdeadbeef,
+                                   0xdeadbeefdeadbeef,0xdeadbeefdeadbeef,
+                                   0xdeadbeefdeadbeef,0xdeadbeefdeadbeef };
+
+    };
 
 
 /*! \brief The type of VTADPISim function pointer */
 //    int VTADPIEval(int nstep)
 typedef int (*VTADPIEvalFunc)(int);
 typedef void (*VTAHLSDPIInitFunc)(VTAContextHandle ctx,
-                           VTAAxisDPIFunc axisDpiFunc,
-                                  VTAHostDPIFunc host_dpi);
+                                  VTAAxisDPIFunc axisDpiFunc,
+                                  VTAHostDPIFunc host_dpi,
+                                  VTAMemDPIFunc mem_dpi);
 
 using tvm::runtime::Module;
 
@@ -138,6 +170,28 @@ protected:
         static_cast<DPIChiselNode*>(self)->HostDPI(
                 req_valid, req_opcode, req_addr,
                 req_value, req_deq, resp_valid, resp_value);
+    }
+    static void VTAMemDPI(
+            VTAContextHandle self,
+            dpi8_t rd_req_valid,
+            dpi8_t rd_req_len,
+            dpi8_t rd_req_id,
+            dpi64_t rd_req_addr,
+            dpi8_t wr_req_valid,
+            dpi8_t wr_req_len,
+            dpi64_t wr_req_addr,
+            dpi8_t wr_valid,
+            const svOpenArrayHandle wr_value,
+            dpi64_t wr_strb,
+            dpi8_t* rd_valid,
+            dpi8_t*   rd_id,
+            const svOpenArrayHandle rd_value,
+            dpi8_t rd_ready) {
+        static_cast<DPIChiselNode*>(self)->MemDPI(
+                rd_req_valid, rd_req_len, rd_req_id,
+                rd_req_addr, wr_req_valid, wr_req_len, wr_req_addr,
+                wr_valid, wr_value, wr_strb,
+                rd_valid, rd_id, rd_value, rd_ready);
     }
 protected:
     void on_hls_stream_data(
@@ -192,6 +246,67 @@ protected:
             host_device_.PushResponse(resp_value);
         }
         delete r;
+    }
+    void MemDPI(
+            dpi8_t rd_req_valid,
+            dpi8_t rd_req_len,
+            dpi8_t rd_req_id,
+            dpi64_t rd_req_addr,
+            dpi8_t wr_req_valid,
+            dpi8_t wr_req_len,
+            dpi64_t wr_req_addr,
+            dpi8_t wr_valid,
+            const svOpenArrayHandle wr_value,
+            dpi64_t wr_strb,
+            dpi8_t* rd_valid,
+            dpi8_t*  rd_id,
+            const svOpenArrayHandle rd_value,
+            dpi8_t rd_ready) {
+
+        // check data pointers
+        // data is expected to come in 64bit chunks
+        // up to 512 bits total
+        // more bits require wider strb data
+        assert(wr_value != NULL);
+        assert(svDimensions(wr_value) == 1);
+        assert(svSize(wr_value, 1) <= 8);
+        assert(svSize(wr_value, 0) == 64);
+        assert(rd_value != NULL);
+        assert(svDimensions(rd_value) == 1);
+        assert(svSize(rd_value, 1) <= 8);
+        assert(svSize(rd_value, 0) == 64);
+
+        int lftIdx = svLeft(rd_value, 1);
+        int rgtIdx = svRight(rd_value, 1);
+        int blkNb  = lftIdx - rgtIdx + 1;
+        assert(lftIdx >= 0);
+        assert(rgtIdx >= 0);
+        assert(lftIdx >= rgtIdx);
+        assert(blkNb > 0);
+
+        if (wr_valid) {
+            mem_device_.WriteData(wr_value, wr_strb);
+        }
+        if (rd_req_valid || wr_req_valid) {
+            mem_device_.SetRequest(
+                    rd_req_valid,
+                    rd_req_addr,
+                    rd_req_len,
+                    rd_req_id,
+                    wr_req_addr,
+                    wr_req_len,
+                    wr_req_valid);
+        }
+
+
+        MemResponse r = mem_device_.ReadData(rd_ready, blkNb);
+        *rd_valid = r.valid;
+        for (int idx = 0; idx < blkNb; idx ++) {
+            uint64_t* dataPtr = (uint64_t*)svGetArrElemPtr1(rd_value, rgtIdx + idx);
+            assert(dataPtr != NULL);
+            (*dataPtr) = r.value[idx];
+        }
+        *rd_id     = r.id;
     }
 protected:
     void Init(const std::string & name) {
@@ -313,6 +428,7 @@ protected:
     std::map<int, std::vector<uint64_t > >  _userid_2_array;
     std::map<int, int>                      _userid_2_blkNd;
     HostDevice host_device_;
+    MemDevice   mem_device_;
     std::thread tsim_thread_;
 //    std::vector<uint64_t> _recv_vals;
 
@@ -343,7 +459,77 @@ void HostDevice::WaitPopResponse(HostResponse* r) {
     resp_.WaitPop(r);
 }
 
+void MemDevice::SetRequest(
+        uint8_t  rd_req_valid,
+        uint64_t rd_req_addr,
+        uint32_t rd_req_len,
+        uint32_t rd_req_id,
+        uint64_t wr_req_addr,
+        uint32_t wr_req_len,
+        uint8_t  wr_req_valid) {
 
+    std::lock_guard<std::mutex> lock(mutex_);
+    if(rd_req_addr !=0 ){
+        void * rd_vaddr = vta::vmem::VirtualMemoryManager::Global()->GetAddr(rd_req_addr);
+        if(rd_req_valid == 1) {
+            rlen_ = rd_req_len + 1;
+            rid_  = rd_req_id;
+            raddr_ = reinterpret_cast<uint64_t*>(rd_vaddr);
+        }
+    }
+
+    if(wr_req_addr != 0){
+        void * wr_vaddr = vta::vmem::VirtualMemoryManager::Global()->GetAddr(wr_req_addr);
+        if (wr_req_valid == 1) {
+            wlen_ = wr_req_len + 1;
+            waddr_ = reinterpret_cast<uint64_t*>(wr_vaddr);
+        }
+    }
+}
+
+MemResponse MemDevice::ReadData(uint8_t ready, int blkNb) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    MemResponse r;
+    r.valid = rlen_ > 0;
+    r.value = rlen_ > 0 ? raddr_ : dead_beef_;
+    r.id    = rid_;
+    if (ready == 1 && rlen_ > 0) {
+        raddr_ += blkNb;
+        rlen_ -= 1;
+    }
+    return r;
+}
+
+void MemDevice::WriteData(svOpenArrayHandle value, uint64_t wr_strb) {
+
+    int lftIdx = svLeft(value, 1);
+    int rgtIdx = svRight(value, 1);
+    int blkNb  = lftIdx - rgtIdx + 1;
+    assert(lftIdx >= 0);
+    assert(rgtIdx >= 0);
+    assert(lftIdx >= rgtIdx);
+    assert(blkNb > 0);
+    // supported up to 64bit strb
+    assert(blkNb <= 8);
+
+    std::lock_guard<std::mutex> lock(mutex_);
+    int strbMask = 0xff;
+    if (wlen_ > 0) {
+        for (int idx = 0 ; idx < blkNb; ++idx) {
+            int strbFlags = (wr_strb >> (idx * 8)) & strbMask;
+            if (!(strbFlags == 0 || strbFlags == strbMask)) {
+                LOG(FATAL) << "Unexpected strb data " << (void*)wr_strb;
+            }
+            if (strbFlags != 0) {
+                uint64_t* elemPtr = (uint64_t*)svGetArrElemPtr1(value, rgtIdx + idx);
+                assert(elemPtr != NULL);
+                waddr_[idx] = (*elemPtr);
+            }
+        }
+        waddr_ += blkNb;
+        wlen_ -= 1;
+    }
+}
 
 tvm::runtime::Module DPIChiselNode::Load(std::string dll_name) {
     auto n = tvm::runtime::make_object<DPIChiselNode>();

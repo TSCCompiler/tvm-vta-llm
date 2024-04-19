@@ -83,6 +83,8 @@ void VTAMemDPI(dpi8_t rd_req_valid,
 
 }
 
+
+
 void VTADPIInit(VTAContextHandle handle,
                 VTASimDPIFunc sim_dpi,
                 VTAHostDPIFunc host_dpi,
