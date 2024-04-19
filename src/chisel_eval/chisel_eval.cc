@@ -315,7 +315,7 @@ protected:
         CHECK(_feval != nullptr);
         auto _init_func = reinterpret_cast<VTAHLSDPIInitFunc >(GetSymbol("VTAHLSDPIInit"));
         CHECK(_init_func != nullptr);
-        _init_func(this, VTAAxisDPIFunc, VTAHostDPI);
+        _init_func(this, VTAAxisDPIFunc, VTAHostDPI, VTAMemDPI);
         _userid_2_array.clear();
         _userid_2_blkNd.clear();
 
@@ -470,7 +470,9 @@ void MemDevice::SetRequest(
 
     std::lock_guard<std::mutex> lock(mutex_);
     if(rd_req_addr !=0 ){
-        void * rd_vaddr = vta::vmem::VirtualMemoryManager::Global()->GetAddr(rd_req_addr);
+        // todo change to my own memory
+//        void * rd_vaddr = vta::vmem::VirtualMemoryManager::Global()->GetAddr(rd_req_addr);
+        void * rd_vaddr = nullptr;
         if(rd_req_valid == 1) {
             rlen_ = rd_req_len + 1;
             rid_  = rd_req_id;
@@ -479,7 +481,9 @@ void MemDevice::SetRequest(
     }
 
     if(wr_req_addr != 0){
-        void * wr_vaddr = vta::vmem::VirtualMemoryManager::Global()->GetAddr(wr_req_addr);
+        //todo change to my own memory
+//        void * wr_vaddr = vta::vmem::VirtualMemoryManager::Global()->GetAddr(wr_req_addr);
+        void* wr_vaddr = nullptr;
         if (wr_req_valid == 1) {
             wlen_ = wr_req_len + 1;
             waddr_ = reinterpret_cast<uint64_t*>(wr_vaddr);
