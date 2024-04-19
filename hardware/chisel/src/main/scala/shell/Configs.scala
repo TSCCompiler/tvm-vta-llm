@@ -49,6 +49,22 @@ class CustomConfig extends Config((site, here, up) => {
       hostParams = AXIParams(coherent = false,
         addrBits = 6,
         dataBits = 32),
+      memParams = AXIParams(coherent = true,
+        addrBits = 32,
+        dataBits = 32,
+        idBits = 1,
+
+      ),
+      vcrParams = VCRParams(), vmeParams = VMEParams()
+    )
+})
+
+class CustomConfigForAxiMaster extends Config((site, here, up) => {
+  case ShellKey =>
+    ShellParams(
+      hostParams = AXIParams(coherent = false,
+        addrBits = 5,
+        dataBits = 32),
       memParams = AXIParams(), vcrParams = VCRParams(), vmeParams = VMEParams()
     )
 })

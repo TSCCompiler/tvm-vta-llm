@@ -18,7 +18,7 @@
  */
 package vta.util
 
-import vta.interface.axi.{AXILiteClient, XilinxAXILiteClient}
+import vta.interface.axi.{AXILiteClient, XilinxAXILiteClient, AXIMaster, XilinxAXIMaster}
 
 object ExportAxiLiteClient {
   def apply(s_axi_control : XilinxAXILiteClient, host : AXILiteClient): Unit = {
@@ -42,4 +42,57 @@ object ExportAxiLiteClient {
     host.r.bits.resp        :=s_axi_control.RRESP
   }
 
+}
+
+object ExportXilinxAxiMaster {
+  def apply(m_axi_gmem : XilinxAXIMaster, mem : AXIMaster): Unit = {
+    // memory
+    mem.aw.valid        :=  m_axi_gmem.AWVALID
+    m_axi_gmem.AWREADY  :=  mem.aw.ready
+
+    //////////////////////////////////////////////////////////////////////////////////
+    mem.aw.bits.addr    := m_axi_gmem.AWADDR
+    mem.aw.bits.id      := m_axi_gmem.AWID
+    mem.aw.bits.user    := m_axi_gmem.AWUSER
+    mem.aw.bits.len     := m_axi_gmem.AWLEN
+    mem.aw.bits.size    := m_axi_gmem.AWSIZE
+    mem.aw.bits.burst   := m_axi_gmem.AWBURST
+    mem.aw.bits.lock    := m_axi_gmem.AWLOCK
+    mem.aw.bits.cache   := m_axi_gmem.AWCACHE
+    mem.aw.bits.prot    := m_axi_gmem.AWPROT
+    mem.aw.bits.qos     := m_axi_gmem.AWQOS
+    mem.aw.bits.region  := m_axi_gmem.AWREGION
+    mem.w.valid         := m_axi_gmem.WVALID
+    m_axi_gmem.WREADY   := mem.w.ready
+    mem.w.bits.data     := m_axi_gmem.WDATA
+    mem.w.bits.strb     := m_axi_gmem.WSTRB
+    mem.w.bits.last     := m_axi_gmem.WLAST
+    mem.w.bits.id       := m_axi_gmem.WID
+    mem.w.bits.user     := m_axi_gmem.WUSER
+    m_axi_gmem.BVALID   := mem.b.valid
+    mem.b.ready         := m_axi_gmem.BREADY
+    m_axi_gmem.BRESP    := mem.b.bits.resp
+    m_axi_gmem.BID      := mem.b.bits.id
+    m_axi_gmem.BUSER    := mem.b.bits.user
+    mem.ar.valid        := m_axi_gmem.ARVALID
+    m_axi_gmem.ARREADY  := mem.ar.ready
+    mem.ar.bits.addr    := m_axi_gmem.ARADDR
+    mem.ar.bits.id      := m_axi_gmem.ARID
+    mem.ar.bits.user    := m_axi_gmem.ARUSER
+    mem.ar.bits.len     := m_axi_gmem.ARLEN
+    mem.ar.bits.size    := m_axi_gmem.ARSIZE
+    mem.ar.bits.burst   := m_axi_gmem.ARBURST
+    mem.ar.bits.lock    := m_axi_gmem.ARLOCK
+    mem.ar.bits.cache   := m_axi_gmem.ARCACHE
+    mem.ar.bits.prot    := m_axi_gmem.ARPROT
+    mem.ar.bits.qos     := m_axi_gmem.ARQOS
+    mem.ar.bits.region  := m_axi_gmem.ARREGION
+    m_axi_gmem.RVALID   := mem.r.valid
+    mem.r.ready         := m_axi_gmem.RREADY
+    m_axi_gmem.RDATA    := mem.r.bits.data
+    m_axi_gmem.RRESP    := mem.r.bits.resp
+    m_axi_gmem.RLAST    := mem.r.bits.last
+    m_axi_gmem.RID      := mem.r.bits.id
+    m_axi_gmem.RUSER    := mem.r.bits.user
+  }
 }
