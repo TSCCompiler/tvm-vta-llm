@@ -8,6 +8,7 @@
 #include <verilated_vcd_c.h>
 
 //#include "VTestTopWithCHLS.h"
+#include "VHostSimAxiliteModule.h"
 
 
 #define STRINGIZE(x) #x
@@ -67,7 +68,8 @@ int VTADPIEval(int nstep){
     VerilatedVcdC* tfp = new VerilatedVcdC;
 
     top->trace(tfp, 99);
-    tfp->open("/mnt/workspace/project/nn_compiler/vta-hw/hardware/chisel/test_run_dir/AxiliteExampleHls/axilite.vcd");
+//    tfp->open("/mnt/workspace/project/nn_compiler/vta-hw/hardware/chisel/test_run_dir/AxiliteExampleHls/axilite.vcd");
+    tfp->open(STRINGIZE_VALUE_OF(TSIM_TRACE_FILE));
 
     for (int i = 0; i < 10; ++i) {
         top->reset = 1;

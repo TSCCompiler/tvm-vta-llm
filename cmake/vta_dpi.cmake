@@ -48,6 +48,7 @@ macro(GenVerilatedDPI TARGET_NAME TOP_NAME V_DIR)
 #                ${VTA_HW_PATH}/hardware/dpi/tsim_device.cc
                 #            ${VTA_HW_PATH}/src/vmem/virtual_memory.cc
         )
+        target_compile_definitions(${TARGET_NAME} PRIVATE "-DTVM_EXPORTS=")
     else (IS_WINDOWS)
         add_custom_command(OUTPUT
                 ${CMAKE_CURRENT_BINARY_DIR}/V${TOP_NAME}.cpp
