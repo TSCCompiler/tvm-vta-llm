@@ -39,6 +39,8 @@
 #include <condition_variable>
 #include <thread>
 
+#include "../vmem/virtual_memory.h"
+
 namespace vta {
 namespace chisel{
     using namespace tvm::runtime;
@@ -302,8 +304,7 @@ protected:
         for (int idx = 0; idx < blkNb; idx ++) {
             uint64_t* dataPtr = (uint64_t*)svGetArrElemPtr1(rd_value, rgtIdx + idx);
             assert(dataPtr != NULL);
-            uint32_t val = 0;//r.value[idx];
-            (*dataPtr) = val;
+            (*dataPtr) = r.value[idx];
         }
         *rd_id     = r.id;
     }
@@ -470,8 +471,8 @@ void MemDevice::SetRequest(
     std::lock_guard<std::mutex> lock(mutex_);
     if(rd_req_addr !=0 ){
         // todo change to my own memory
-//        void * rd_vaddr = vta::vmem::VirtualMemoryManager::Global()->GetAddr(rd_req_addr);
-        void * rd_vaddr = nullptr;
+        void * rd_vaddr = vta::vmem::VirtualMemoryManager::Global()->GetAddr(rd_req_addr);
+//        void * rd_vaddr = nullptr;
         if(rd_req_valid == 1) {
             rlen_ = rd_req_len + 1;
             rid_  = rd_req_id;
@@ -481,8 +482,8 @@ void MemDevice::SetRequest(
 
     if(wr_req_addr != 0){
         //todo change to my own memory
-//        void * wr_vaddr = vta::vmem::VirtualMemoryManager::Global()->GetAddr(wr_req_addr);
-        void* wr_vaddr = nullptr;
+        void * wr_vaddr = vta::vmem::VirtualMemoryManager::Global()->GetAddr(wr_req_addr);
+//        void* wr_vaddr = nullptr;
         if (wr_req_valid == 1) {
             wlen_ = wr_req_len + 1;
             waddr_ = reinterpret_cast<uint64_t*>(wr_vaddr);
@@ -528,7 +529,7 @@ void MemDevice::WriteData(svOpenArrayHandle value, uint64_t wr_strb) {
                 assert(elemPtr != NULL);
                 LOG(INFO) << "setting data as " << (*elemPtr);
                 //todo set waddr to real addr
-                //waddr_[idx] = (*elemPtr);
+                waddr_[idx] = (*elemPtr);
             }
         }
         waddr_ += blkNb;
