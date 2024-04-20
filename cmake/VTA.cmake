@@ -206,9 +206,10 @@ elseif(PYTHON)
     endif()
     # Add tsim driver sources
     tvm_file_glob(GLOB CHISEL_RUNTIME_SRCS ${VTA_HW_PATH}/src/*.cc)
-#    tvm_file_glob(GLOB CHISEL_RUNTIME_SRCS vta/runtime/*.cc)
-
+    tvm_file_glob(GLOB CHISEL_RUNTIME_SRCS ${VTA_HW_PATH}/vta/runtime/*.cc)
+    list(APPEND CHISEL_RUNTIME_SRCS ${VTA_HW_PATH}/src/vmem/virtual_memory.cc)
     list(APPEND CHISEL_RUNTIME_SRCS ${VTA_HW_PATH}/src/chisel_eval/chisel_eval.cc)
+    list(APPEND CHISEL_RUNTIME_SRCS ${VTA_HW_PATH}/src/chisel_eval/chisel_driver.cc)
 
     # Target lib: vta_tsim
     add_library(vta_chisel SHARED ${CHISEL_RUNTIME_SRCS})

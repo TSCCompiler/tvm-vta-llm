@@ -31,6 +31,7 @@
 extern "C" {
 #endif
 
+#include <tvm/runtime/c_runtime_api.h>
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -90,20 +91,20 @@ int VTADeviceRun(VTADeviceHandle device,
  * \param cached Region can be set to not cached (write-back) if set to 0.
  * \return A pointer to the allocated region.
  */
-void* VTAMemAlloc(size_t size, int cached);
+TVM_DLL void* VTAMemAlloc(size_t size, int cached);
 
 /*!
  * \brief Frees a physically contiguous region in memory readable/writeable by FPGA.
  * \param buf Buffer to free.
  */
-void VTAMemFree(void* buf);
+TVM_DLL void VTAMemFree(void* buf);
 
 /*!
  * \brief Returns a physical address to the region of memory allocated with VTAMemAlloc.
  * \param buf Pointer to memory region allocated with VTAMemAlloc.
  * \return The physical address of the memory region.
  */
-vta_phy_addr_t VTAMemGetPhyAddr(void* buf);
+TVM_DLL vta_phy_addr_t VTAMemGetPhyAddr(void* buf);
 
 /*!
  * \brief Performs a copy operation from host memory to buffer allocated with VTAMemAlloc.

@@ -10,6 +10,7 @@
 #include <windows.h>
 #endif
 #include <thread>
+#include "vta/runtime/runtime.h"
 
 bool get_bit_mask(int val, int bit_id){
     int mask = int(1) << bit_id;
@@ -44,6 +45,13 @@ int main(int argc, char** argv)
         << "Failed to load dynamic shared library "
         << " " << dlerror();
 #endif
+    void* host_data = VTAMemAlloc(sizeof (int64_t )*100, false);
+    std::vector<int64_t > ref_data(100) ;
+    for (int i = 0; i < 100; ++i) {
+        ref_data[i] = i;
+    }
+    memcpy(host_data, ref_data.data(), sizeof (int64_t)*100);
+    vta_phy_addr_t phyAddr = VTAMemGetPhyAddr(host_data);
     const auto* f = tvm::runtime::Registry::Get("runtime.module.loadfile_vta-chisel-tsim");
     tvm::runtime::Module n = (*f)(argv[2]);
     auto f2 = n.GetFunction("Eval");
@@ -62,7 +70,7 @@ int main(int argc, char** argv)
         bool ap_auto_restart = get_bit_mask(control_signals, 7);
         LOG(INFO) << "ap start " << ap_start
         <<"ap_ready " << ap_ready;
-        f_write(0x10, 64);
+        f_write(0x10, phyAddr);
 //        f_write(0x18, 10);
         control_signals = set_bit_mask(control_signals, 0, true);
         f_write(0x0, control_signals);
@@ -74,6 +82,11 @@ int main(int argc, char** argv)
             }
         } while (true);
         LOG(INFO) << "got is done signal ";
+        // memory cpy back
+        memcpy(ref_data.data(), host_data, sizeof (int64_t)*100);
+        for (int i = 0; i < 100; ++i) {
+            LOG(INFO) << "ret at " << i << " " << ref_data[i];
+        }
 
 //        printf("control signals %x\n", control_signals);
         int c_val = f_read(0x28);
