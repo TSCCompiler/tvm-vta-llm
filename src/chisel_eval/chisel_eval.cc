@@ -345,8 +345,10 @@ protected:
             );
         }else if(name=="GetArray"){
             return TypedPackedFunc<tvm::runtime::NDArray(int )>(
-                    [this](int user_id){
-                        auto arr = tvm::runtime::NDArray();
+                    [this](int user_id)->NDArray{
+                        auto arr = tvm::runtime::NDArray::Empty({0}, DLDataType{kDLUInt, 64, 1},
+                                                                DLDevice{kDLCPU, 0});
+                        auto shape = arr.Shape();
                         if (_userid_2_blkNd.find(user_id)!=_userid_2_blkNd.end()){
                             if (_userid_2_array.find(user_id)!=_userid_2_array.end()){
                                 auto blknd = _userid_2_blkNd[user_id];

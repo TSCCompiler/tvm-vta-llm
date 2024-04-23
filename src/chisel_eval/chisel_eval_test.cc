@@ -88,6 +88,14 @@ int main(int argc, char** argv)
         for (int i = 0; i < 100; ++i) {
             LOG(INFO) << "ret at " << i << " " << ref_data[i];
         }
+        for(int uid = 1; uid <= 3; uid++){
+            tvm::runtime::NDArray ret_arr = f3(uid);
+            LOG(INFO) << "ret " << uid << "is " << ret;
+            LOG(INFO) << "ret array with shape " << ret_arr.Shape();
+//            auto dshape = ret_arr.Shape();
+//            auto* dshape_ptr = dshape.data();
+//            LOG(INFO) << "ret array is " << ret_arr.Shape();
+        }
 
 //        printf("control signals %x\n", control_signals);
         int c_val = f_read(0x28);
@@ -104,8 +112,7 @@ int main(int argc, char** argv)
 
 
     }
-//    tvm::runtime::NDArray ret_arr = f3(15);
-//    LOG(INFO) << "ret is " << ret;
-//    LOG(INFO) << "ret array is " << ret_arr.Shape();
+
+
     return 0;
 }
