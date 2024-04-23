@@ -1,0 +1,1 @@
+docker run -v D:/workspace/project/nn_compiler/:/mnt/d/workspace/project/nn_compiler -it tsc_tvm_deps:v4 /bin/bash

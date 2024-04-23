@@ -21,10 +21,11 @@ import chisel3._
 import chisel3.iotesters.{Driver, PeekPokeTester}
 import chisel3.stage.ChiselStage
 import chisel3.util._
-import vta.{AXI4MasterConfig, AXI4FetchConfig}
+import vta.{AXI4FetchConfig, AXI4MasterConfig}
 import vta.dpi._
 import vta.hls.blackboxes._
 import vta.interface.axi.{AXIClient, AXILiteMaster, AXIParams}
+import vta.shell.{VTAHostSim, VTAMemSim}
 import vta.util.config.Parameters
 class DummyHostModule extends Module{
   val inst_v_param = AXIParams(idBits = 1, dataBits = 128)
@@ -72,7 +73,58 @@ class DPISimFetchModule extends Module {
   implicit val p : Parameters = new AXI4FetchConfig
   val io = IO(new Bundle() {
     val interrupt = Output(Bool())
+    val recvOuts = Output(Vec(3, UInt(8.W)))
   })
+  val u_host_mem = Module(new VTAMemSim())
+  val u_host_slite = Module(new VTAHostSim())
+  val u_fetch_hls = Module(new FetchHls())
+  val u_load_queue = Module(new VTAAxisDPI(user_id = 1, data_len = 128))
+  val u_store_queue = Module(new VTAAxisDPI(user_id = 2, data_len = 128))
+  val u_compute_queue = Module(new VTAAxisDPI(user_id = 3, data_len = 128))
+
+  // connect clock and reset signals
+  u_fetch_hls.io.ap_clk := clock
+  u_fetch_hls.io.ap_rst_n := ~reset.asBool()
+
+  u_host_mem.io.ap_clk := clock
+  u_host_mem.io.ap_rst := reset.asBool()
+
+  u_host_slite.io.ap_clk := clock
+  u_host_slite.io.ap_rst_n := reset.asBool()
+
+  u_load_queue.io.clock := clock
+  u_load_queue.io.reset := reset.asBool()
+
+  u_store_queue.io.clock := clock
+  u_store_queue.io.reset := reset.asBool()
+
+  u_compute_queue.io.clock := clock
+  u_compute_queue.io.reset := reset.asBool()
+
+  // export interrupt to sim env
+  io.interrupt := u_fetch_hls.io.interrupt
+
+  // connect axilite client and axi4 master
+  u_fetch_hls.io.control_bus <> u_host_slite.io.axi
+  u_host_mem.io.axi <> u_fetch_hls.io.instr
+
+  // connect hls::streams
+  u_load_queue.io.queue <> u_fetch_hls.io.load_queue
+  u_store_queue.io.queue <> u_fetch_hls.io.store_queue
+  u_compute_queue.io.queue <> u_fetch_hls.io.gemm_queue
+
+  // export recv cnt
+  io.recvOuts(0) := u_load_queue.io.recv_cnt
+  io.recvOuts(1) := u_store_queue.io.recv_cnt
+  io.recvOuts(2) := u_compute_queue.io.recv_cnt
+
+}
+
+object DPISimFetchModuleVeri extends App {
+  (new ChiselStage).emitVerilog(new DPISimFetchModule, Array(
+    "--target-dir",
+    "test_run_dir/DPISimFetchModule"
+  ))
 }
 
 class SimEnvModulePoker(c:SimEnvModule) extends PeekPokeTester(c) {

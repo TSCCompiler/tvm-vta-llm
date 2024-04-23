@@ -70,7 +70,8 @@ int main(int argc, char** argv)
         bool ap_auto_restart = get_bit_mask(control_signals, 7);
         LOG(INFO) << "ap start " << ap_start
         <<"ap_ready " << ap_ready;
-        f_write(0x10, phyAddr);
+        f_write(0x10, 50);
+        f_write(0x18, phyAddr);
 //        f_write(0x18, 10);
         control_signals = set_bit_mask(control_signals, 0, true);
         f_write(0x0, control_signals);
