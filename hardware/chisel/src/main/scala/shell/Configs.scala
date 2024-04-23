@@ -71,6 +71,23 @@ class CustomConfigForAxiMaster extends Config((site, here, up) => {
     )
 })
 
+class CustomFetchConfig extends Config((site, here, up)=>{
+  case ShellKey =>
+    ShellParams(
+      hostParams = AXIParams(coherent = false,
+        addrBits = 5,
+        dataBits = 32
+      ),
+      memParams = AXIParams(coherent = true,
+        addrBits = 32,
+        dataBits = 128,
+        idBits = 1,
+      ),
+      vcrParams = VCRParams(),
+      vmeParams = VMEParams()
+    )
+})
+
 
 /** F1Config. Shell configuration for F1 */
 class F1Config extends Config((site, here, up) => {

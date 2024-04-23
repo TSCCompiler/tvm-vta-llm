@@ -21,9 +21,11 @@ import chisel3._
 import chisel3.iotesters.{Driver, PeekPokeTester}
 import chisel3.stage.ChiselStage
 import chisel3.util._
+import vta.{AXI4MasterConfig, AXI4FetchConfig}
 import vta.dpi._
 import vta.hls.blackboxes._
 import vta.interface.axi.{AXIClient, AXILiteMaster, AXIParams}
+import vta.util.config.Parameters
 class DummyHostModule extends Module{
   val inst_v_param = AXIParams(idBits = 1, dataBits = 128)
   val control_bus_param = AXIParams(idBits = 0, dataBits = 32, addrBits = 5)
@@ -64,6 +66,13 @@ class SimEnvModule extends Module {
   u_dummy_host.io.store_queue <> u_fetch_hls.io.store_queue
   u_dummy_host.io.interrupt := u_fetch_hls.io.interrupt
   io.interrupt := u_fetch_hls.io.interrupt
+}
+
+class DPISimFetchModule extends Module {
+  implicit val p : Parameters = new AXI4FetchConfig
+  val io = IO(new Bundle() {
+    val interrupt = Output(Bool())
+  })
 }
 
 class SimEnvModulePoker(c:SimEnvModule) extends PeekPokeTester(c) {

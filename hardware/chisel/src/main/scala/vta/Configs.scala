@@ -152,6 +152,8 @@ class DefaultCustomConfig extends Config(new CoreConfig ++ new CustomConfig)
 
 class AXI4MasterConfig extends Config(new CoreConfig ++ new CustomConfigForAxiMaster)
 
+class AXI4FetchConfig extends Config(new CoreConfig ++ new CustomFetchConfig)
+
 class GenericEval[T <: Module, P <: PeekPokeTester[T], C <: Parameters]
 (tag : String, dutFactory : (Parameters) => T, testerFactory : (T) => P) extends App {
 

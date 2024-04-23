@@ -1,5 +1,5 @@
 {
-  "TARGET" : "chisel",
+  "TARGET" : "pynq",
   "HW_VER" : "0.0.2",
   "FPGA_DEVICE": "xc7z020clg400-2",
   "LOG_INP_WIDTH" : 3,
